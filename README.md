@@ -3,7 +3,7 @@ Notes on *R for Data Science (2e)* by Hadley Wickham, et. al.
 
 Progress:
 Whole game
-- [ /] 1. Data Visualization
+- [x] 1. Data Visualization
 - [ ] 2. Workflow: Basics
 - [ ] 3. Data Transformation
 - [ ] 4. Workflow: Code Style
@@ -41,4 +41,3 @@ Program
 
 Communicate
 - [ ] Quarto
-- [ ] 
