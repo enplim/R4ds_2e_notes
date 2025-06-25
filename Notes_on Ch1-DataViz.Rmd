@@ -1,0 +1,286 @@
+---
+title: "Notes on Ch1 - Data Visualization"
+author: "N_Lim"
+date: "2025-06-25"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+library(ggthemes)
+```
+
+## First Steps
+
+```{r}
+penguins
+```
+
+Dataset has 8 columns. We can also inspect the data using `glimpse()`:
+```{r}
+glimpse(penguins)
+```
+
+### Creating a ggplot
+- define plot object using `ggplot()`
+- then add layers to it
+
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point()
+```
+
+- ggplot2 follows the R philosophy that missing values should never go silently missing 
+
+
+Adding colors
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(
+    x = flipper_length_mm,
+    y = body_mass_g,
+    color = species
+  )
+) +
+  geom_point()
+```
+
+Adding a smooth curve
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(
+    x = flipper_length_mm,
+    y = body_mass_g,
+    color = species
+  ) 
+) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
+Using different shapes for each species:
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(
+    x = flipper_length_mm,
+    y = body_mass_g
+  )
+) +
+  geom_point(mapping = aes(
+    color = species,
+    shape = species
+  )) +
+  geom_smooth(method = "lm")
+```
+
+Improving the labels:
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(
+    x = flipper_length_mm,
+    y = body_mass_g
+  )
+) +
+  geom_point(mapping = aes(
+    color = species,
+    shape = species
+  )) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Body mass and flipper length",
+    subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo Penguins",
+    x = "Flipper length (mm)",
+    y = "Body mass (g)",
+    color = "Species",
+    shape = "Species"
+  )
+```
+
+
+Adding a theme to the plot:
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(
+    x = flipper_length_mm,
+    y = body_mass_g
+  )
+) +
+  geom_point(mapping = aes(
+    color = species,
+    shape = species
+  )) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Body mass and flipper length",
+    subtitle = "Dimensins of Adelie, Chinstrap, and Gentoo Penguins",
+    x = "Flipper length (mm)",
+    y = "Body mass (g)",
+    color = "Species",
+    shape = "Species"
+  ) +
+  scale_color_colorblind()
+```
+
+Practice problem
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(
+    x = flipper_length_mm,
+    y = body_mass_g
+  )
+) +
+  geom_point(mapping = aes(
+    color = bill_depth_mm
+  )) +
+  geom_smooth()
+```
+
+## Visualizing distributions
+
+Basic bar plot for categorical variable:
+```{r}
+ggplot(penguins, aes(x = species)) +
+  geom_bar()
+```
+
+Bar plot with the bars reordered according to count or frequency:
+```{r}
+ggplot(penguins, aes(x = fct_infreq(species))) +
+  geom_bar()
+```
+
+Basic histogram plot for visualizing the distribution of a variable
+```{r}
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 200)
+```
+
+Basic density plot aka a smoothed-out version of the histogram (a histogram with infinite number of bars):
+```{r}
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_density()
+```
+
+Basic boxplot
+```{r}
+ggplot(penguins, aes(x = species, y = body_mass_g)) +
+  geom_boxplot()
+```
+
+Muliple density plots
+```{r}
+ggplot(penguins, aes(
+  x = body_mass_g,
+  color = species
+)) +
+  geom_density(linewidth = 0.75)
+```
+
+Multiple density plots with color fill:
+```{r}
+ggplot(penguins, aes(
+  x = body_mass_g,
+  color = species,
+  fill = species
+)) +
+  geom_density(alpha = 0.5)
+```
+
+Basic stacked bar plots
+```{r}
+ggplot(penguins, aes(
+  x = island,
+  fill = species
+)) +
+  geom_bar()
+```
+
+Basic relative frequency plot aka stacked bar plot with the y-axis showing the proportion:
+```{r}
+ggplot(penguins, aes(
+  x = island,
+  fill = species
+)) +
+  geom_bar(position = "fill")
+```
+
+- easier to do in R than in Python
+- the "count" label on the y-axis is now misleading and should be changed using `labs()`
+
+
+Plotting using three or more variables
+```{r}
+ggplot(
+  penguins,
+  aes(
+    x = flipper_length_mm,
+    y = body_mass_g
+  )
+) +
+  geom_point(aes(
+    color = species,
+    shape =island
+  ))
+```
+
+- this is hard to look at, now that we have three variables
+- a better way is to split the plots into facets
+
+Splitting the plots into facets:
+```{r}
+ggplot(penguins, aes(
+  x = flipper_length_mm,
+  y = body_mass_g
+)) +
+  geom_point(aes(
+    color = species,
+    shape = island
+  )) +
+  facet_wrap(~island)
+```
+
+Saving plots
+- use `ggsave()` 
+```{r}
+ggplot(penguins, aes(
+  x = flipper_length_mm,
+  y = body_mass_g
+)) +
+  geom_point()
+ggsave(filename = "penguin-plot.png")
+```
+
+Notes on using `ggsave()`
+- if the width and height are not specified, they will be taken from the dimensions of the current plotting device.
+- the authors recommend using Quarto to assemble your final reports
+
+
+
+
+
+
+
+
+
+
+
+
+
+
