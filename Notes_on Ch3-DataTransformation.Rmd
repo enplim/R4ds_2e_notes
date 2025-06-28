@@ -1,0 +1,407 @@
+---
+title: "Notes_on_Ch3-DataTransformation"
+author: "Norman LIm"
+date: "2025-06-28"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Prerequisites
+```{r}
+library(nycflights13)
+library(tidyverse)
+```
+
+Exploring `nycflights` data
+```{r}
+flights
+```
+We can see that `flights` is a tibble.
+
+Another way to view the dataset using `glimpse()`:
+```{r}
+glimpse(flights)
+```
+
+### `dplyr` basics
+
+Common theme for `dplyr` verbs
+- first argument is always the data frame
+- subsequent arguments typically describe which columns to operate on
+- output is always a new data frame
+- verbs are organized onto four groups based on what they operate on: **rows, columns, groups,** or **tables**
+
+Example:
+```{r}
+flights |> 
+  filter(dest == "IAH") |> 
+  group_by(year, month, day) |> 
+  summarize(arr_delay = mean(arr_delay, na.rm = TRUE))
+```
+
+## Rows
+### `filter()`
+
+Example: find all flights that departed more than 120 minutes late:
+```{r}
+flights |> 
+  filter(dep_delay > 120)
+```
+
+Logical conditions can also be used:
+```{r}
+flights |> 
+  filter(month == 1, day == 1)
+```
+
+```{r}
+flights |> 
+  filter(month == 1 | month == 2)
+```
+
+
+**Tip:** a useful shorcut for comibing `|` and `==` is `%in%. For example, the expression above can be written as:
+```{r}
+flights |> 
+  filter(month %in% c(1, 2))
+```
+
+
+To save the result, we simply use the assignment operator `<-`:
+```{r}
+jan1 <- flights |> 
+  filter(month == 1 & day == 1)
+```
+
+
+### `arrange()`
+- `arrange()` changes the order or the rows based on the value of the columns.
+```{r}
+flights |> 
+  arrange(year, month, day, dep_time)
+```
+
+- the `desc()` function, when combined with `arrange()`, will show the results in descending order:
+```{r}
+flights |> 
+  arrange(desc(dep_delay))
+```
+
+### `distinct()
+- finds all unique rows in a dataset
+```{r}
+flights |> 
+  distinct()
+
+flights |> 
+  distinct(origin, dest)
+```
+
+- Filtering for unique rows while keeping other columns:
+```{r}
+flights |> 
+  distinct(origin, dest, .keep_all = TRUE)
+```
+
+
+## Columns
+Four important columns that affect the columns without changing the rows:
+- `mutate()`
+- `select()`
+- `rename()`
+- `relocate()`
+
+Adding new column/s that are calculated from existing columns:
+```{r}
+flights |> 
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60
+  )
+```
+
+- by default, mutate adds new columns on the right-hand-side of the dataset, making it difficult to see.
+- we can use the `before()` argument to instead add the new column/s on the left-hand-side:
+```{r}
+flights |> 
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60,
+    .before = 1
+  )
+```
+
+- we can also specify where to insert the new column/s with `.after()`:
+```{r}
+flights |> 
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60,
+    .after = day
+  )
+```
+
+
+- keeping only the newly-created columns and the other columns used in creating it/them:
+```{r}
+flights |> 
+  mutate(
+    gain = dep_delay - arr_time,
+    speed = distance / air_time * 60,
+    .keep = "used"
+  )
+```
+
+
+### `select()`
+`select()` is used to 'select' columns.
+
+- selecting columns by name:
+```{r}
+flights |> 
+  select(year, month, day)
+```
+
+
+- selecting all columns between two column names (inclusive):
+```{r}
+flights |> 
+  select(year:day)
+```
+
+
+- selecting all columns exept those you specify (inclusive):
+```{r}
+flights |> 
+  select(!year:day)
+```
+
+- note: in older versions of R use `-` instead of `!` for this.
+
+- other useful options with 
+  - `select()` 
+  - `starts_with()` 
+  - `ends_with()` 
+  - `contains()`
+  - `num_range()`: `num_range("x", 1:3)` matches `x1`, `x2`, and `x3`
+  
+- renaming as you select using the `=` operator:
+```{r}
+flights |> 
+  select(tail_num = tailnum)
+```
+
+### `rename()`
+- keep all existing variables and just rename a few:
+```{r}
+flights |> 
+  rename(tail_num = tailnum)
+```
+
+
+### `relocate()`
+- used to move variables around to improve visibility or collect related variables
+```{r}
+flights |> 
+  relocate(time_hour, air_time)
+```
+
+- the `.before()` and `.after()` arguments works with `relocate()` too:
+```{r}
+flights |> 
+  relocate(year:dep_time, .after = time_hour)
+
+flights |> 
+  relocate(starts_with("arr"), .before = dep_time)
+```
+
+
+## The pipe (` |> ` or `%>%`)
+- useful when combining "verbs"
+- avoids having to nest one function call inside another
+- makes the code readable
+
+```{r}
+flights |> 
+  filter(dest == "IAH") |> 
+  mutate(speed = distance / air_time * 60) |> 
+  select(year:day, dep_time, carrier, flight, speed) |> 
+  arrange(desc(speed))
+```
+
+
+## Groups
+- most important functions are `group_by()`, `summarize()`, and the slice family of functions
+
+### `group_by()`
+- divides the dataset into groups:
+```{r}
+flights |> 
+  group_by(month)
+```
+
+
+### `summarize()`
+- calculates a single summary statistic
+- reduces the data frame into 1 row of summary statistic per group
+
+```{r}
+flights |> 
+  group_by(month) |> 
+  summarize(
+    ave_delay = mean(dep_delay)
+  )
+```
+
+- using `summarize()` when there are `NA`s in the data:
+```{r}
+flights |> 
+  group_by(month) |> 
+  summarize(
+    ave_delay = mean(dep_delay, na.rm = TRUE)
+  )
+```
+
+- using `summarize()` and show the count per group:
+```{r}
+flights |> 
+  group_by(month) |> 
+  summarize(
+    ave_delay = dep_delay, na.rm = TRUE,
+    n = n()
+  )
+```
+
+- according to the warnings, the `summarize()` was deprecated in dplyr 1.1.0. 
+- we can use `reframe()` instead:
+```{r}
+flights |> 
+  group_by(month) |> 
+  reframe(
+    ave_delay = dep_delay, na.rm = TRUE,
+    n = n()
+  )
+```
+
+
+### the `slice()_` functions
+- used to extract specific rows within each group
+```{r}
+flights |> 
+  group_by(dest) |> 
+  slice_max(arr_delay, n = 1) |> 
+  relocate(dest)
+```
+
+- instead of specifying the number of item to extract using the argument `n`, we can specify the proportion instead, using `prop`
+```{r}
+flights |> 
+  group_by(dest) |> 
+  slice_max(prop = 0.1, order_by = dest) |> 
+  relocate(dest)
+```
+
+
+### Grouping multiple variables
+```{r}
+daily <- flights |> 
+  group_by(year, month, day)
+
+daily
+```
+
+- when we summarize a tibble grouped by more than 1 variable, each summary "peels" off the last group by defailt:
+```{r}
+daily_flights <- daily |> 
+  summarize(n = n())
+daily_flights
+```
+
+- but we can also specify to drop or keep the grouping layers:
+```{r}
+daily |> 
+  summarize(n = n(), .groups = "drop_last")
+
+daily |> 
+  summarize(n = n(), .groups = "keep")
+```
+
+
+### ungrouping
+- we can also remove a grouping from a data frame using `ungroup()` instead of `summarize()`
+```{r}
+daily |> 
+  ungroup()
+```
+
+
+- to satisfy our curiosity, we can try summarizing an ungrouped data frame:
+```{r}
+daily |> 
+  ungroup() |> 
+  summarize(
+    avg_delay = mean(dep_delay, na.rm = TRUE),
+    flights = n()
+  )
+```
+
+- in this case, we got a single row because dplyr treats all rows of an ungrouped data frame as belonging to one group (or a supergroup?)
+
+### the `.by()` argument in `summarize()`
+- new and experimental argument
+- allows us to use the `summarize()` function without using `group_by()` first
+```{r}
+flights |> 
+  summarize(
+    delay = mean(dep_delay, na.rm = TRUE),
+    n = n(),
+    .by = month
+  )
+
+flights |> 
+  summarize(
+    delay = mean(dep_delay, na.rm = TRUE),
+    n = n(),
+    .by = c(origin, dest)
+  )
+```
+
+
+## Exercises using data from the `Lahman` package
+```{r}
+batters <- Lahman::Batting |> 
+  group_by(playerID) |> 
+  summarize(
+    performance = sum(H, na.rm = TRUE) / sum(AB, na.rm = TRUE),
+    n = sum(AB, na.rm = TRUE)
+  )
+
+batters
+```
+
+- plotting the skill of the batter (batting average, performance) against the number of opportunities to hit the ball (times at bat, `n`):
+```{r}
+batters |> 
+  filter(n > 100) |> 
+  ggplot(aes(x = n, y = performance)) +
+  geom_point(alpha = 0.10) +
+  geom_smooth(se = FALSE)
+```
+
+- from the plot, we can see that:
+1. the variation in performance among players with fewer at-bats. This is commonly observed when computing summary statistics: the variation decreases as the sample size increases.
+2. There is a positive correlation between skill (performance) and opportunities to hit the ball --- of course teams want to give their best batters the most opportunities to hit the ball.
+
+- this makes it tricky to rank the performance of batters. 
+- Naively getting the ranking based on batting averages will yield a different result:
+```{r}
+batters |> 
+  arrange(desc(performance))
+```
+
+- this reminds me of school rankings based on board exam results. If we naively rank based on passing percentage alone, many schools who only had one board exam taker will land on top simply because they got a "perfect" passing rate (1 out of 1). 
+
+
+
+

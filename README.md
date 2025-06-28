@@ -5,7 +5,7 @@ Progress:
 Whole game
 - [x] 1. Data Visualization
 - [x] 2. Workflow: Basics
-- [ ] 3. Data Transformation
+- [x] 3. Data Transformation
 - [ ] 4. Workflow: Code Style
 - [ ] 5. Data tidying
 - [ ] 6. Workflow: Scripts and Projects
