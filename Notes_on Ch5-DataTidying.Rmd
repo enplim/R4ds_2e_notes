@@ -1,0 +1,263 @@
+---
+title: 'Notes on Ch 5: Data Tidying'
+author: "N. Lim"
+date: "2025-06-30"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Prerequisites
+```{r}
+library(tidyverse)
+```
+
+## Tidy data
+
+Rules for making a dataset tidy:
+1. Each variable is a column; each column is a variable.
+2. Each observation is a row; each row is an ovservation.
+3. Each value is a cell; each cell is a single value.
+
+
+Advantages of having a tidy data:
+- having a consistent data structure makes it easier to learn the tools that work with it because of uniformity. 
+- allows R's vectorized functions to shine. Packages in the tidyverse like dplyr, ggplot2, etc. are designed to work with tidy data.
+
+Examples:
+```{r}
+# Compute rate per 10,000
+table1 |> 
+  mutate(rate = cases / population * 10000)
+```
+
+```{r}
+# Compute total cases per year
+table1 |> 
+  group_by(year) |> 
+  summarize(total_cases = sum(cases))
+```
+
+```{r}
+# Visualize changes over time
+ggplot(table1, aes(x = year, y = cases)) +
+  geom_line(aes(group = country), color = "grey50") + 
+  geom_point(aes(color = country, shape = country)) +
+  scale_x_continuous(breaks = c(1999, 2000))
+```
+
+## Lengthening data
+
+Reasons why most real data is untidy:
+1. Data is often organized to facilitate some other goal other than analysis (for example, to make data entry easier). 
+2. Most people aren't familiar with the principles of tidy data.
+
+
+### Data in column names
+
+```{r}
+billboard
+```
+Observations on `billboard` data:
+- Each observation is a song. 
+- First 3 columns (`artist`, `track`, `date.entered`) are variables that describe the song.
+- The proceeding columns describe the rank of the song each week for 76 weeks.
+
+Tidying the `billboard` data using `pivot_longer()`:
+```{r}
+billboard |> 
+  pivot_longer(
+    cols = starts_with("Wk"),
+    names_to = "Week",
+    values_to = "rank"
+  )
+```
+
+This tidying approach generated `NA`s. We can get rid of them during tidying by using the `values_drop_na = TRUE` argument:
+```{r}
+billboard |> 
+  pivot_longer(
+    cols = starts_with("Wk"),
+    names_to = "week",
+    values_to = "rank",
+    values_drop_na = TRUE
+  )
+```
+
+Note: the number or rows decreased.
+
+Now, what happens if a song is in the top 100 for more than 76 weeks?
+
+While there is no data available after the 76th week, it can be computed from the dataset. First, we must parse the week number to make it numerical:
+
+Parsing the week column (using `readr::parse_number()``):
+```{r}
+billboard_longer <- billboard |> 
+  pivot_longer(
+    cols = starts_with("Wk"),
+    names_to = "week",
+    values_to = "rank",
+    values_drop_na = TRUE
+  ) |> 
+  mutate(
+    week = parse_number(week)
+  )
+
+billboard_longer
+```
+
+Visualizing how song ranking varies over time:
+```{r}
+billboard_longer |> 
+  ggplot(aes(x = week, y = rank, group = track)) +
+  geom_line(alpha = 0.25) +
+  scale_y_reverse()
+```
+
+We can see that no song can stay in the top 100 for more than 20 weeks.
+
+
+### How does pivoting work?
+
+```{r}
+df <- tribble(
+  ~id,  ~bp1, ~bp2,
+   "A",  100,  120,
+   "B",  140,  115,
+   "C",  120,  125
+)
+```
+
+where `id` stands for patient id, `bp1` and `bp2` are two blood pressure measurements for each patient.
+
+To tidy the data, we need three variables: `id` (already exists), `measurement` (bp1 or bp2), and `value` (the readings).
+
+Tidying the data using `pivot_longer()`:
+```{r}
+df |> 
+  pivot_longer(
+    cols = bp1:bp2,
+    names_to = "measurement",
+    values_to = "value"
+  )
+```
+
+### When there are any variables in column names
+
+Observe the following data:
+```{r}
+who2
+```
+
+Info and observations re `who2` data:
+- dataset was created by WHO and contains info about tuberculosis diagnoses.
+- first 2 columns: country and year
+- succeeding columns consist of sp_ or rel_ or ep_, then m_ or f_,  plus some numbers.
+- they stand for measurement methods (sp/rel/ep), gender (m or f), and the age range (0-14, 15-24, etc.)
+
+Now that we got to know the data, we can do the pivot operation.
+```{r}
+who2 |> 
+  pivot_longer(
+    cols = !(country:year),
+    names_to = c("diagnosis", "gender", "age"),
+    names_sep = "_",
+    values_to = "count"
+  )
+```
+
+## When data and variagble names are in column headers
+
+What to do when the column names include a mix of values and variable names?
+
+For example, consider this dataset:
+```{r}
+household
+```
+- dataset contains info about 5 families: the date of birth for each child, and the names of each child.
+- the column names contain 2 variables (dob and name), plus some qualifier (child1 or child2). 
+
+Pivoting using the `.value` "sentinel"
+```{r}
+household |> 
+  pivot_longer(
+    cols = !family,
+    names_to = c(".value", "child"),
+    names_sep = "_",
+    values_drop_na = TRUE
+  )
+```
+
+
+## Widening data
+
+When one observation is spread across multiple rows, we can use `pivot_wider()` to increase the number of columns and make the dataset "wider"
+
+Example:
+```{r}
+cms_patient_experience
+```
+- core unit being studied is an organization.
+- each organization is spread across 6 rows.
+
+Viewing the complete set of values for `measure_cd`, and `measure_title`
+```{r}
+cms_patient_experience |> 
+  distinct(measure_cd, measure_title)
+```
+
+Pivoting the dataset using `pivot_wider()`
+```{r}
+cms_patient_experience |> 
+  pivot_wider(
+    names_from = measure_cd,
+    values_from = prf_rate
+  )
+```
+After pivoting wider, still there are multiple rows for each organization. This is because we did not supply to `pivot_wider()` information about which column/s can be considered as unique identifier (they have values that uniquely identify each row).
+
+```{r}
+cms_patient_experience |> 
+  pivot_wider(
+    id_cols = starts_with("org"),
+    names_from = measure_cd,
+    values_from = prf_rate
+  )
+```
+
+## How does pivot_wider work??
+It turns this data:
+```{r}
+df <- tribble(
+  ~id, ~measurement, ~value,
+  "A",        "bp1",    100,
+  "B",        "bp1",    140,
+  "B",        "bp2",    115, 
+  "A",        "bp2",    120,
+  "A",        "bp3",    105
+)
+```
+
+into:
+```{r}
+df |> pivot_wider(
+  names_from = measurement,
+  values_from = value
+)
+```
+
+- pivot_wider() effectively performs select-distinct-mutate operations:
+```{r}
+df |> 
+  select(-measurement, -value) |> 
+  distinct() |> 
+  mutate(
+    x = NA, y = NA, z = NA
+  )
+```
+Then it fills all the missing values using the source data.
+
+
+
+
+

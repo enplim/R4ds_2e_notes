@@ -7,7 +7,7 @@ Whole game
 - [x] 2. Workflow: Basics
 - [x] 3. Data Transformation
 - [x] 4. Workflow: Code Style
-- [ ] 5. Data tidying
+- [x] 5. Data tidying
 - [ ] 6. Workflow: Scripts and Projects
 - [ ] 7. Data Import
 - [ ] 8. Workflow: Getting Help
