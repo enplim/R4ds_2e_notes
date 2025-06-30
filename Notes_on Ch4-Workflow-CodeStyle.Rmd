@@ -1,0 +1,199 @@
+---
+title: "Notes on Ch4: Workflow - code style"
+author: "N. Lim"
+date: "2025-06-30"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+- Good coding style is like correct punctuation; you can manage without it, but it sure makes things easier to read.  
+
+- A good way to restyle code is to use the **styler** package.
+
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+
+## R-rrific style for Names
+- use lowercase letters, numbers, and `_`.
+- use `_` to separate words  
+
+Example:
+```{r}
+short_flights <- flights |> 
+  filter(air_time < 60)
+```
+
+
+## R-rrific style for Spaces
+- Put spaces on either side of mathematical operators execpt for `^`.
+
+Example:
+```r
+z <- (a + b)^2 / d
+```
+
+- Don't put spaces inside or outside parentheses for regular function calls.
+- Always put a space after a comma, just like in English.
+
+Example:
+```r
+mean(x, na.rm = TRUE)
+```
+
+- It's ok to add extra spaces if it improves alignment.
+
+Example:
+```{r}
+flights |> 
+  mutate(
+    speed      = distance / air_time,
+    dep_hour   = dep_time %/% 100,
+    dep_minute = dep_time %% 200
+  )
+```
+
+
+## R-rrific style for Pipes
+- Put spaces before and after the pipe (`|>` or `%>%`)
+
+Example:
+```{r}
+flights |> 
+  filter(!is.na(arr_delay), !is.na(tailnum)) |> 
+  count(dest)
+```
+
+- If the function you're piping ino has named arguments, put each argument on a new line.  
+- If the function doesn't have named arguments, keep everything on one line unless it doesn't fit, in which case you should put each argument on its own line.
+
+Example:
+```{r}
+flights |> 
+  group_by(tailnum) |> 
+  summarize(
+    delay = mean(arr_delay, na.rm = TRUE),
+    n = n()
+  )
+```
+
+- After the first step of the pipeline, indent each line by **two spaces**.
+- If you're putting each argument on its own line, indent by an extra two spaces.
+
+Example:
+```{r}
+flights |> 
+  group_by(tailnum) |> 
+  summarize(
+    delay = mean(arr_delay, na.rm = TRUE),
+    n = n()
+  )
+```
+
+- It's ok to shirk some of these rules if your pipeline fits easily on one line. 
+
+Examples:
+```r
+# This fits on one line
+df |> mutate(y = x + 1)
+
+# This is preferred because it is easier to add
+# more variables in the future
+df |> 
+  mutate(
+  y = x + 1
+)
+```
+
+- Be wary of writing very long lines (more than 10-15 lines). It is better to break them up into smaller sub-tasks and give each task an informative name.
+
+
+## R-rrific style for ggplot
+- Treat the `+` the same way as the pipe.
+
+Example:
+```{r}
+flights |> 
+  group_by(month) |> 
+  summarize(
+    delay = mean(arr_delay, na.rm = TRUE)
+  ) |> 
+  ggplot(aes(x = month, y = delay)) +
+  geom_point() +
+  geom_line()
+```
+
+- If you can't fit all of the arguments to a function on a single line, put each argument on its own line.
+
+Example:
+```{r}
+flights |> 
+  group_by(dest) |> 
+  summarize(
+    distance = mean(distance),
+    speed = mean(distance / air_time, na.rm = TRUE)
+  ) |> 
+  ggplot(aes(x = distance, y = speed)) +
+  geom_smooth(
+    method = "loess",
+    span = 0.5,
+    se = FALSE,
+    color = "white",
+    linewidth = 4
+  ) +
+  geom_point()
+```
+
+
+## R-rrific style for sectioning comments
+```{r}
+# Load data --------------------------------------
+
+# Plot data --------------------------------------
+```
+
+## Exercises
+
+E1. Restyle the following pipelines following the guidelines above:
+
+---r
+flights|>filter(dest=="IAH")|>group_by(year,month,day)|>summarize(n=n(),
+delay=mean(arr_delay,na.rm=TRUE))|>filter(n>10)
+
+flights|>filter(carrier=="UA",dest%in%c("IAH","HOU"),sched_dep_time>
+0900,sched_arr_time<2000)|>group_by(flight)|>summarize(delay=mean(
+arr_delay,na.rm=TRUE),cancelled=sum(is.na(arr_delay)),n=n())|>filter(n>10)
+---
+
+Solution:
+```{r}
+flights |> 
+  filter(dest == "IAH") |>
+  group_by(year, month, day) |> 
+  summarize(
+    n = n(),
+    delay = mean(arr_delay,na.rm=TRUE)
+  ) |>
+  filter(n > 10)
+```
+```{r}
+flights |> 
+  filter(
+    carrier == "UA",
+    dest %in% c("IAH", "HOU"),
+    sched_dep_time > 0900,
+    sched_arr_time > 2000
+  ) |> 
+  group_by(flight) |> 
+  summarize(
+    delay = mean(arr_delay, na.rm = TRUE),
+    cancelled = sum(is.na(arr_delay)),
+    n = n()
+  ) |> 
+  filter(n > 10)
+```
+
