@@ -8,8 +8,8 @@ Whole game
 - [x] 3. Data Transformation
 - [x] 4. Workflow: Code Style
 - [x] 5. Data tidying
-- [ ] 6. Workflow: Scripts and Projects
-- [ ] 7. Data Import
+- [x] 6. Workflow: Scripts and Projects
+- [x] 7. Data Import
 - [ ] 8. Workflow: Getting Help
 
 Visualize
