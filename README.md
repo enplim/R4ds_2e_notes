@@ -10,10 +10,10 @@ Whole game
 - [x] 5. Data tidying
 - [x] 6. Workflow: Scripts and Projects
 - [x] 7. Data Import
-- [ ] 8. Workflow: Getting Help
+- [x] 8. Workflow: Getting Help
 
 Visualize
-- [ ] 9. Layers
+- [x] 9. Layers
 - [ ] 10. Exploratory Data Analysis
 - [ ] 11. Communication
 
