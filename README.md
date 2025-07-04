@@ -14,7 +14,7 @@ Whole game
 
 Visualize
 - [x] 9. Layers
-- [ ] 10. Exploratory Data Analysis
+- [x] 10. Exploratory Data Analysis
 - [ ] 11. Communication
 
 Transform
