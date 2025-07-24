@@ -15,7 +15,7 @@ Whole game
 Visualize
 - [x] 9. Layers
 - [x] 10. Exploratory Data Analysis
-- [ ] 11. Communication
+- [x] 11. Communication
 
 Transform
 - [ ] 12. Logical Vectors
