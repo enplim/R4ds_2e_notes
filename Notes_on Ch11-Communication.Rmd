@@ -1,8 +1,10 @@
 ---
-title: "Notes on Chapter 11: Communication"
+title: 'Notes on Chapter 11: Communication'
 author: "Norman Lim"
 date: "2025-07-23"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 Prerquisites
