@@ -1,0 +1,455 @@
+---
+title: "Notes on Ch 16 - Factors"
+author: "Norman Lim"
+date: "2025-07-30"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+### Prerequisites
+
+```{r}
+library(tidyverse)
+```
+
+## Factor Basics
+
+- Disadvantages of using strings to record variables:  
+1. Prone to typos.  
+2. It doesn't sort in a useful way. 
+
+Example:
+```{r}
+# Intended data
+x1 <- c("Dec", "Apr", "Jan", "Mar")
+
+# Data with typo
+x2 <- c("Dec", "Apr", "Jam", "Mar")
+
+# sorting is not meaningful here
+sort(x1)
+```
+
+Solution:  
+- Convert the data into factor.  
+
+Steps:  
+1. Create valid levels.  
+2. Create a factor.  
+
+Demonstration:
+```{r}
+# Step 1: create valid levels
+month_levels = c(
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+)
+
+# Step 2: create a factor
+y1 <- factor(x1, levels = month_levels)
+y1
+
+sort(y1)
+```
+
+Disadvantage:
+- Any values not in the level will be silently converted to `NA`:
+```{r}
+y2 <- factor(x2, levels = month_levels)
+y2
+```
+
+Better way:
+- use `forcats::fct()` instead or `factor()` to convert strings into factors:
+```r
+y2 <- fct(x2, levels = month_levels)
+```
+
+Q: What happens when we omit the `levels`?
+A: For `factor()`, default level will be assigned, in alphabetical order. For `fct()` the default level is sorted according to the order of appearance:
+```{r}
+factor(x1)
+fct(x1)
+```
+
+- Levels can be accessed using `levels()`:
+```{r}
+levels(y2)
+```
+
+- When reading data with **readr**, we can create a factor on the spot using `col_factor()`:
+```{r}
+csv <- "
+month,value
+Jan,12
+Feb,56
+Mar,12"
+
+df <- read_csv(csv, col_types = cols(month = col_factor(month_levels)))
+df$month
+
+```
+
+
+## Demo with factors using GSS data
+
+```{r}
+gss_cat
+```
+
+- Viewing the levels using `count()`:
+```{r}
+gss_cat |> 
+  count(race)
+```
+
+Two most important operations when working with factors:
+1. Changing the order of the levels.  
+2. Changing the values of the levels.  
+
+### Exercises
+1. Explore the distribution of `rincome` (reported income). What makes the default bar chart hard to understand? How could you improve the plot.  
+
+Ans.
+```{r}
+gss_cat |> 
+  ggplot(aes(x = rincome)) +
+  geom_bar() +
+  coord_flip()
+```
+
+The income were given terms of salary ranges and the labels are long. Flipping the coordinates or using a horizontal bar char would make it easier to understand. Ordering the bars will also make it easier to understand.
+
+2. What is the most common `relig` in this survey? What is the most common `partyid`?  
+```{r}
+gss_cat |> 
+  ggplot(aes(x = relig)) +
+  geom_bar() +
+  coord_flip()
+```
+
+Protestant is the most common religion for the respondents.
+
+```{r}
+gss_cat |> 
+  ggplot(aes(x = partyid)) +
+  geom_bar() +
+  coord_flip()
+```
+
+The most common `partyid` is `Independent".
+
+3. Which `relig` does `denom` (denomination) apply to? How can you find out with a table? How can you find out with a visualization?
+
+table:
+```{r}
+table3 <- gss_cat |> 
+  select(relig, denom) |> 
+  group_by(relig, denom) |> 
+  summarize(
+    count = n()
+  ) |> 
+  ungroup()
+
+table3
+```
+
+data viz:
+```{r}
+table3 |> ggplot(aes(x = denom, y = count, fill = relig)) +
+  geom_col() +
+  coord_flip()
+```
+
+`denom` refers to the religious sect(?).
+
+
+## Modifying factor order
+
+Example showing a plot with no sorting order applied:
+```{r}
+relig_summary <- gss_cat |> 
+  group_by(relig) |> 
+  summarize(
+    tvhours = mean(tvhours, na.rm = TRUE),
+    n = n()
+  )
+
+ggplot(relig_summary, aes(x = tvhours, y = relig)) +
+  geom_point()
+```
+
+The plot is hard to read because there is no overall pattern.
+
+Plot ordered using `fct_reorder()`:
+```{r}
+relig_summary |> 
+  ggplot(aes(
+    x = tvhours,
+    y = fct_reorder(relig, tvhours)
+  )) +
+  geom_point()
+```
+
+Here `relig` is reordered according to the number of `tvhours`.
+
+
+- When the transformations are more complicated, is is better to do that inside the `mutate()` function rather than 'on-the-fly'.
+```{r}
+relig_summary |> 
+  mutate(
+    relig = fct_reorder(relig, tvhours)
+  ) |> 
+  ggplot(aes(x = tvhours, y = relig)) +
+  geom_point()
+```
+
+
+Plot exploring how the average age varies across reported income levels. Again, `fct_reorder()` was used here.
+```{r}
+rincome_summary <- gss_cat |> 
+  group_by(rincome) |> 
+  summarize(
+    age = mean(age, na.rm = TRUE),
+    n = n()
+  )
+
+rincome_summary |> 
+  ggplot(aes(
+    x = age,
+    y = fct_reorder(rincome, age)
+  )) +
+  geom_point()
+```
+
+- This time, the technique or reordering does not work well. This is because `rincome` already has a principled order.  
+- We should reserve `fct_reorder` for factores whose levels are arbitrarily ordered.  
+
+
+- If there is a sensible level already, and we only want to tweak it a bit, `fct_relevel()` is useful.  
+- Example where `fct_relevel()` is used to move "Not applicable" to the bottom of the plot:
+```{r}
+rincome_summary |> ggplot(aes(
+  x = age,
+  y = fct_relevel(rincome, "Not applicable")
+)) +
+  geom_point()
+```
+
+It looks like most churchgoers in the survey are senior citizens who have already retired (no income).
+
+- Example of using `fct_reorder()` to improve coloring on the plot:
+```{r}
+by_age <- gss_cat |> 
+  filter(!is.na(age)) |> 
+  count(age, marital) |> 
+  group_by(age) |> 
+  mutate(
+    prop = n / sum(n)
+  )
+
+by_age |> ggplot(aes(
+  x = age, 
+  y = prop, 
+  color = marital
+)) + 
+  geom_line(linewidth = 1) +
+  scale_color_brewer(palette = "Set1") +
+  labs(
+    subtitle = "Plot with color not reordered"
+  )
+
+by_age |> ggplot(aes(
+  x = age,
+  y = prop,
+  color = fct_reorder2(marital, age, prop)
+)) +
+  geom_line(linewidth = 1) +
+  scale_color_brewer(palette = "Set1") +
+  labs(
+    subtitle = "Same plot but with color reordered"
+  )
+```
+
+- For bar plots, `fct_infreq()` can be used to order levels in decreasing frequency. 
+- `fct_infreq()` can be paired with `fct_rev()` if you want bar plot rendered in increasing frequency.
+```{r}
+gss_cat |> 
+  mutate(
+    marital = marital |> fct_infreq() |> fct_rev()
+  ) |> 
+  ggplot(aes(x = marital)) +
+  geom_bar()
+```
+
+
+### Exercises
+1. There are some suspiciously high numbers in `tvhours`. Is the mean a good summary()?
+
+Ans.
+```{r}
+relig_summary |> 
+  arrange(desc(n))
+```
+
+No. Averaging `tvhours` for each `relig` will not give us a fair result since the number of respondents for each `relig` is so unbalanced -- more than 10,000 identified as protestant but only 71 identified as Hindu, for example. Also, there might be other factors at play here, such as economic status and hours spent watching tv.
+
+2. For each factor in `gss_cat`, identify whether the order of the levels is arbitrary or principled.
+
+Ans.
+```{r}
+levels(gss_cat$marital)
+levels(gss_cat$race)
+levels(gss_cat$rincome)
+levels(gss_cat$partyid)
+levels(gss_cat$relig)
+levels(gss_cat$denom)
+```
+
+marital: arbitrary
+race: arbitrary
+rincome: principled
+partyid: arbitrary
+relig: arbitrary
+denom: arbitrary
+
+
+3. Why did moving "Not Applicable" to the front of the levels move it to the bottom of the plot()
+
+Ans. 
+Horizontal bar charts are rendered in reverse order. This behavior can also be seen in Python, where a table shown in decreasing order would be rendered in increasing order in a bar plot.
+
+
+## Modifying factor levels
+
+- The most powerful tool for modifying factors is `fct_recode()`.  
+- `fct_recode()` allows us to recode, or change the value of each level.
+
+Example:
+```{r}
+gss_cat |> count(partyid)
+```
+
+The default levels here are inconsistent.  
+
+- Tweaking the levels using `fct_recode()`:
+```{r}
+gss_cat |> 
+  mutate(
+    partyid = fct_recode(partyid,
+      "Republican, strong"    = "Strong republican",
+      "Republican, weak"      = "Not str republican",
+      "Independent, near rep" = "Ind,near rep",
+      "Independent near dem"  = "Ind,near dem",
+      "Democrat, weak"        = "Not str democrat",
+      "Democrat, strong"      = "Strong democrat"
+    )
+  ) |> 
+  count(partyid)
+```
+
+
+- `fct_collapse()` is a useful tool for reducing the number of levels or lumping together some levels:
+```{r}
+gss_cat |> 
+  mutate(
+    partyid = fct_collapse(partyid,
+      "other" = c("No answer", "Don't know", "Other party"),
+      "rep"   = c("Strong republican", "Not str republican"),
+      "ind"   = c("Ind,near rep", "Independent", "Ind,near dem"),
+      "dem"   = c("Not str democrat", "Strong democrat")
+    )
+  ) |> 
+  count(partyid)
+```
+
+Example of manually lumping to "Other" some categories:
+```{r}
+gss_cat |>
+  mutate(
+    partyid = fct_recode(partyid,
+      "Republican, strong"    = "Strong republican",
+      "Republican, weak"      = "Not str republican",
+      "Independent, near rep" = "Ind,near rep",
+      "Independent, near dem" = "Ind,near dem",
+      "Democrat, weak"        = "Not str democrat",
+      "Democrat, strong"      = "Strong democrat",
+      "Other"                 = "No answer",
+      "Other"                 = "Don't know",
+      "Other"                 = "Other party"
+    )
+  ) |> 
+  count(partyid)
+```
+
+
+- Example using `fct_lump_*()` family of functions to lump small groups to "Other":
+```{r}
+gss_cat |> 
+  mutate(
+    relig = fct_lump_lowfreq(relig)
+  ) |> 
+  count(relig)
+```
+
+
+- To control how the small categories are lumped together, we can also use `fct_lump_n()` to tell dplyr how many categories to retain:
+```{r}
+gss_cat |> 
+  mutate(
+    relig = fct_lump_n(relig, n = 10)
+  ) |> 
+  count(relig, sort = TRUE)
+```
+
+
+### Exercises
+
+1. How have the proportions of people identifying as Democrat, Republican, and Independent changed over time?
+
+Ans.
+```{r}
+gss_cat |> 
+  mutate(
+    partyid = fct_collapse(partyid,
+      "other" = c("No answer", "Don't know", "Other party"),
+      "rep"   = c("Strong republican", "Not str republican"),
+      "ind"   = c("Ind,near rep", "Independent", "Ind,near dem"),
+      "dem"   = c("Not str democrat", "Strong democrat")
+    )
+  ) |> 
+  group_by(year, partyid) |> 
+  summarize(
+    count = n()
+  ) |> 
+  ggplot(aes(x = year, y = count, color = partyid)) +
+  geom_point() +
+  geom_line()
+```
+
+2. How could you collapse `rincome` into a small set of categories?
+
+Ans.
+I would categorize income as low, medium, high, and others using `fct_recode()`
+
+
+3. Notice there are 9 groups (excluding other) in the `fct_lump` example above. Why not 10?
+
+Ans. Because the default `other_level` for `fct_lump` is considered as a level too. 
+
+
+## Ordered factors
+
+- A ranking can be created for factors using the `ordered()` function:
+```{r}
+ordered(c("a", "b", "c"))
+```
+
+- Ordered factors are particularly useful when mapping colors.
+
+
+
+
+

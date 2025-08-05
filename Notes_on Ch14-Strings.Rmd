@@ -1,0 +1,461 @@
+---
+title: 'Notes on Chapter 14: Strings'
+author: "Norman Lim"
+date: "2025-07-28"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+---
+
+### Prerequisites
+```{r}
+library(tidyverse)
+library(babynames)
+```
+
+## Creating a string
+```{r}
+string1 <- "This is a string"
+string2 <- 'If I want to include a "quote" inside a string, I use single quotes'
+```
+
+
+### Escapes
+```{r}
+double_quote <- "\"" # or '"'
+single_quote <- '\'' # or "'"
+```
+
+- Using a literal backslash to escape a backlash:
+```{r}
+backslash <- "\\"
+```
+
+- To view strings properly, use `str_view()`:
+```{r}
+x <- c(single_quote, double_quote, backslash)
+
+str_view(x)
+```
+
+
+### Raw strings
+
+- Using multiple quotes and/or backslashes can be hard to read and confusing.  
+- Better method is to declare the string as "raw" string, just like in Python:
+```{r}
+tricky <- r"(double_quote <- "\"" # or '"'
+single_quote <- '\'' # or "'")"
+
+str_view(tricky)
+```
+
+- Raw strings in R mus be enclosed with `r"()"` or `r"[]"`` or `r"{}"`
+
+### Other special characters
+
+- `\n` for new line.  
+- `\t` for tab.
+- `\u` or `\U` for unicode escapes
+
+```{r}
+x <- c("one\ntwo", "one\ttwo", "\u00b5", "\U0001f604")
+
+str_view(x)
+```
+
+- `str_view()` uses `{\t} for tabs to make them easier to spot.
+
+### Exercises
+1. Create strings that contain the following values:
+> 1. He said "That's amazing!"
+> 2. \a\b\c\d
+> 3. \\\\\\
+
+```{r}
+# No. 1
+str_1 <- r"("He said That's amazing!")"
+str_view(str_1)
+
+# No. 2
+str_2 <- r"(\a\b\c\d)"
+str_view(str_2)
+
+
+# No. 3
+str_3 <- r"(\\\\\\)"
+str_view(str_3)
+
+```
+
+2. Create the string in your R session and print it. What happens to the special "\u00a0"? How does `str_view()` display it? Can you do a little googling to figure out what this special character is?
+
+Ans.
+```{r}
+str_4 <- "This\u00a0is\u00a0tricky"
+str_view(str_4)
+```
+
+The unicode character u+00a0 (`\u00a0`) stands for no-break space. This is a space character that prevents an automatic line break at its position. 
+
+
+### Creating many strings from data
+
+- `str_c`: takes any number of vectors as agruments and returns a character vector:
+```{r}
+str_c("x", "y")
+str_c("x", "y", "z")
+str_c("Hello, ", c("John", "Susan"))
+```
+
+- `str_c` is similar to `past0()`, but is designed to be used with `mutate()`:
+```{r}
+df <- tibble(name = c("Flora", "David", "Terra", NA))
+df |> 
+  mutate(greeting = str_c("Hi ", name, "!"))
+```
+
+- `coalesce()` displays `NA`s in a different way:
+```{r}
+df |> 
+  mutate(
+    greeting1 = str_c("Hi ", coalesce(name, "you"), "!"),
+    greeting2 = coalesce(str_c("Hi", name, "!"))
+  )
+```
+
+### `str_glue()`
+
+- Using `str_c()` leads to a lot of `"`, making the code unreadable. `str_glue()` behaves in a similar way to f-stings in Python, but works in dplyr:
+```{r}
+df |> 
+  mutate(greeting = str_glue("Hi {name}!"))
+```
+
+- One drawback of `str_glue()` is the way it handles `NA`s -- `str_glue()` converts them to the literal string "NA".  
+
+- To escape the curly brackets character "{" or "}" in `str_glue()`, you double it:
+```{r}
+df |> 
+  mutate(greeting = str_glue("{{Hi {name}!}}"))
+```
+
+### `str_flatten()`
+
+- `str_flatten()` takes a character vector and combines each element of the vector into a single string:
+```{r}
+str_flatten(c("x", "y", "z"))
+str_flatten(c("x", "y", "z"), ", ")
+str_flatten(c("x", "y", "z"), ", ", last = ", and ")
+```
+
+- Using `str_flatten()` with `summarize()`:
+```{r}
+df <- tribble(
+  ~ name, ~ fruit,
+  "Carmen", "banana",
+  "Carmen", "apple",
+  "Marvin", "nectarine",
+  "Terrence", "cantaloupe",
+  "Terrence", "papaya",
+  "Terrence", "mandarin"
+)
+
+df |> 
+  group_by(name) |> 
+  summarize(fruits = str_flatten(fruit, ", "))
+```
+
+### Exercises
+
+1. Compare and contrast the results of `paste0` with `str_c()` for the following inputs:
+
+```r
+str_c("hi ", NA)
+str_c(letters[1:2], letters[1:3])
+```
+```{r}
+# str_c
+str_c("hi ", NA)
+# str_c(letters[1:2], letters[1:3])
+
+# paste0
+paste0("hi ", NA)
+paste0(letters[1:2], letters[1:3])
+```
+
+`str_c()` cannot threw an error running the second line due to "incompatible size"
+
+
+## Extracting data from strings
+
+### Separating into rows
+
+- The most common tool is `separate_longer_delim()`:
+```{r}
+df1 <- tibble(x = c("a,b,c", "d,e", "f"))
+df1 |> 
+  separate_longer_delim(x, delim = ",")
+```
+
+- Using `separate_longer_position()`:
+```{r}
+df2 <- tibble(x = c("1211", "131", "21"))
+df2 |> 
+  separate_longer_position(x, width = 1)
+```
+
+### Separating into columns
+
+- Using `separate_wider_delim()`: 
+```{r}
+df3 <- tibble(x = c("a10.1.2022", "b10.2.2011", "e15.1.2015"))
+
+df3 |> 
+  separate_wider_delim(
+    x, delim = ".",
+    names = c("code", "edition", "year")
+  )
+```
+
+- Using the argument `NA` in `searate_wider_delim()` to omit a piece from the source vector :
+```{r}
+df3 |> 
+  separate_wider_delim(
+    x, 
+    delim = ".",
+    names = c("code", NA, "year")
+  )
+```
+
+- `separate_wider_position()` generally requires a known fixed set of columns:
+```{r}
+df4 <- tibble(x = c("202215TX", "202122LA", "202325CA"))
+df4 |> 
+  separate_wider_position(
+    x,
+    widths = c(year = 4, age = 2, state = 2)
+  )
+```
+
+### Diagnosing widening problems
+
+-If the width of a column is not known, the tools `too_few` and `too_many` can be useful:
+
+```{r}
+df <- tibble(x = c("1-1-1", "1-1-2", "1-3", "1-3-2", "1"))
+```
+
+Running the code below will not work:
+```r
+df |> 
+  separate_wider_delim(
+    x,
+    delim = "-",
+    names = c("x", "y", "z")
+  )
+```
+This code will throw the following error:
+
+```
+#> Error in `separate_wider_delim()`:
+#> ! Expected 3 pieces in each element of `x`.
+#> ! 2 values were too short.
+#> ℹ Use `too_few = "debug"` to diagnose the problem.
+#> ℹ Use `too_few = "align_start"/"align_end"` to silence this message
+```
+
+- We can use these error messages to debug our code:
+```{r}
+debug <- df |> 
+  separate_wider_delim(
+    x,
+    delim = "-",
+    names = c("x", "y", "z"),
+    too_few = "debug"
+  )
+```
+
+Looking at the contents of `debug`:
+```{r}
+debug
+```
+
+- The `x_ok` column tells us where the problem occurred:
+```{r}
+debug |> filter(!x_ok)
+```
+
+- The `x_pieces` column how many pieces were found. In this case we are expecting 3, but we only found 2 and 1 pieces. Now we know that the problem was due to having "too_few" pieces. We can fill them with `NA`s to avoid R from throwing an error.  
+- We can then use the argument `too_few = "align_start"` or `too_few = "align_end"` to control where the `NA`s should go.  
+```{r}
+df |> 
+  separate_wider_delim(
+    x,
+    delim = "-",
+    names = c("x", "y", "z"),
+    too_few = "align_start"
+  )
+```
+
+What if we have too many pieces?
+```{r}
+df <- tibble(x = c("1-1-1", "1-1-2", "1-3-5-6", "1-3-2", "1-3-5-7-9"))
+```
+
+- Using the argument `too_many`:
+```{r}
+debug <- df |> 
+  separate_wider_delim(
+    x,
+    delim = "-",
+    names = c("x", "y", "z"),
+    too_many = "debug"
+  )
+
+debug |> filter(!x_ok)
+```
+
+- The `x_remainder` column also shows the excess pieces.  
+- We can opt to drop the excess pieces or merge them into the last column:
+```{r}
+# dropping the excess pieces
+df |> 
+  separate_wider_delim(
+    x, 
+    delim = "-",
+    names = c("x", "y", "z"),
+    too_many = "drop"
+  )
+
+# merging the excess into the last column
+df |> 
+  separate_wider_delim(
+    x,
+    delim = "-",
+    names = c("x", "y", "z"),
+    too_many = "merge"
+  )
+```
+
+
+## Working with individual letters within a string
+
+### Length
+
+- Getting the string length using `str_length`:
+```{r}
+str_length(c("a", "R for data science", NA))
+```
+
+- Using `str_length()` in dplyr:
+```{r}
+babynames |> 
+  count(length = str_length(name), wt = n)
+```
+
+- Another example:
+```{r}
+babynames |> 
+  filter(str_length(name) == 15) |> 
+  count(name, wt = n, sort = TRUE)
+```
+
+### Subsetting
+
+- Using `str_sub()`:
+```{r}
+x <- c("Apple", "Banana", "Pear")
+
+str_sub(x, 1, 3)
+```
+
+- The length of the subset is equal to `end - start + 1`.  
+
+- Similar to Python, we can use `-1` to refer to the last character, -2 to the second to last character, etc. (but this is not 0-indexed!) 
+```{r}
+str_sub(x, -3, -1)
+```
+
+- But unlike Python, subsetting won't fail here if the string is too short -- it will just return as much as possible. 
+```{r}
+str_sub("a", 1, 5)
+```
+
+- Using `str_sub()` in dplyr:
+```{r}
+babynames |> 
+  mutate(
+    first = str_sub(name, 1, 1),
+    last = str_sub(name, -1, -1)
+  )
+```
+
+
+## Non-English text
+
+- Using `charToRaw()` to convert a character to its hexadecimal form (aka the ASCII encoding):
+```{r}
+charToRaw("Hadley")
+```
+
+
+- While ASCII coverage for symbols is limited, UTF-8 can encode just about every character, as well as other symbols, like smileys and other icons and shapes.
+
+- UTF-8 can also "fail" when the input uses a different character encoding. Here is an example using `read_csv` from the **readr** package:
+```r 
+x1 <- "text\nEl Ni\xf1o was particularly bad this year"
+read_csv(x1)$text
+
+x2 <- "text\n\x82\xb1\x82\xf1\x82\xc9\x82\xbf\x82\xcd"
+read_csv(x2)$text
+```
+
+- We can specify the correct encoding via the `locale` argument.
+```r
+read_csv(x1, locale = locale(encoding = "Latin1"))$text
+read_csv(x2, locale = locale(encoding = "Shift-JIS"))$text
+```
+
+### Letter variations
+
+- These two letters might look the same:
+```{r}
+u <- c("\u00fc", "u\u0308")
+str_view(u)
+```
+
+- But they differ in length:
+```{r}
+str_length(u)
+```
+
+- However, the string comparator function `str_equal()` from **stringr** still recognizes that both have the same appearance:
+```{r}
+u[[1]] == u[[2]]
+str_equal(u[[1]], u[[2]])
+```
+
+
+### Locale-dependent functions
+
+- To check which locale is supported in **stringr**, use this command: `stringi::stri_locale_list()`.
+
+- Example of difference in language rules depending on locale:
+```{r}
+str_to_upper(c("i", "ı"))
+str_to_upper(c("i", "ı"), locale = "tr")
+```
+
+- Example of difference in sorting rules depending on locale:
+```{r}
+str_sort(c("a", "c", "ch", "h", "z"))
+str_sort(c("a", "c", "ch", "h", "z"), locale = "cs")
+```
+
+- The `arrange()` function in **dplyr** is also locale-dependent.
+
+
+
+

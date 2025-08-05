@@ -1,0 +1,1339 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Notes on Chapter 14: Strings},
+  pdfauthor={Norman Lim},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Notes on Chapter 14: Strings}
+\author{Norman Lim}
+\date{2025-07-28}
+
+\begin{document}
+\maketitle
+
+\subsubsection{Prerequisites}\label{prerequisites}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## -- Attaching core tidyverse packages ------------------------ tidyverse 2.0.0 --
+## v dplyr     1.1.4     v readr     2.1.5
+## v forcats   1.0.0     v stringr   1.5.1
+## v ggplot2   3.5.2     v tibble    3.3.0
+## v lubridate 1.9.4     v tidyr     1.3.1
+## v purrr     1.1.0     
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+## i Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(babynames)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Creating a string}\label{creating-a-string}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{string1 }\OtherTok{\textless{}{-}} \StringTok{"This is a string"}
+\NormalTok{string2 }\OtherTok{\textless{}{-}} \StringTok{\textquotesingle{}If I want to include a "quote" inside a string, I use single quotes\textquotesingle{}}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Escapes}\label{escapes}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{double\_quote }\OtherTok{\textless{}{-}} \StringTok{"}\SpecialCharTok{\textbackslash{}"}\StringTok{"} \CommentTok{\# or \textquotesingle{}"\textquotesingle{}}
+\NormalTok{single\_quote }\OtherTok{\textless{}{-}} \StringTok{\textquotesingle{}}\SpecialCharTok{\textbackslash{}\textquotesingle{}}\StringTok{\textquotesingle{}} \CommentTok{\# or "\textquotesingle{}"}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{itemize}
+\tightlist
+\item
+  Using a literal backslash to escape a backlash:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{backslash }\OtherTok{\textless{}{-}} \StringTok{"}\SpecialCharTok{\textbackslash{}\textbackslash{}}\StringTok{"}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{itemize}
+\tightlist
+\item
+  To view strings properly, use \texttt{str\_view()}:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(single\_quote, double\_quote, backslash)}
+
+\FunctionTok{str\_view}\NormalTok{(x)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] | '
+## [2] | "
+## [3] | \
+\end{verbatim}
+
+\subsubsection{Raw strings}\label{raw-strings}
+
+\begin{itemize}
+\tightlist
+\item
+  Using multiple quotes and/or backslashes can be hard to read and
+  confusing.\\
+\item
+  Better method is to declare the string as ``raw'' string, just like in
+  Python:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{tricky }\OtherTok{\textless{}{-}}\NormalTok{ r}\StringTok{"(double\_quote \textless{}{-} "}\NormalTok{\textbackslash{}}\StringTok{""} \CommentTok{\# or \textquotesingle{}"\textquotesingle{}}
+\NormalTok{single\_quote }\OtherTok{\textless{}{-}} \StringTok{\textquotesingle{}}\SpecialCharTok{\textbackslash{}\textquotesingle{}}\StringTok{\textquotesingle{}} \CommentTok{\# or "\textquotesingle{}")"}
+
+\FunctionTok{str\_view}\NormalTok{(tricky)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] | double_quote <- "\"" # or '"'
+##     | single_quote <- '\'' # or "'"
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Raw strings in R mus be enclosed with \texttt{r"()"} or
+  \texttt{r"{[}{]}"\textasciigrave{}\textasciigrave{}\ or}r''\{\}``\,`
+\end{itemize}
+
+\subsubsection{Other special characters}\label{other-special-characters}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{\textbackslash{}n} for new line.\\
+\item
+  \texttt{\textbackslash{}t} for tab.
+\item
+  \texttt{\textbackslash{}u} or \texttt{\textbackslash{}U} for unicode
+  escapes
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"one}\SpecialCharTok{\textbackslash{}n}\StringTok{two"}\NormalTok{, }\StringTok{"one}\SpecialCharTok{\textbackslash{}t}\StringTok{two"}\NormalTok{, }\StringTok{"\textbackslash{}u00b5"}\NormalTok{, }\StringTok{"\textbackslash{}U0001f604"}\NormalTok{)}
+
+\FunctionTok{str\_view}\NormalTok{(x)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] | one
+##     | two
+## [2] | one{\t}two
+## [3] | µ
+## [4] | 😄
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{str\_view()} uses `\{\t\} for tabs to make them easier to
+  spot.
+\end{itemize}
+
+\subsubsection{Exercises}\label{exercises}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Create strings that contain the following values: \textgreater{} 1. He
+  said ``That's amazing!'' \textgreater{} 2. \a\b\c\d
+  > 3. \textbackslash\textbackslash\textbackslash{}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# No. 1}
+\NormalTok{str\_1 }\OtherTok{\textless{}{-}}\NormalTok{ r}\StringTok{"("}\NormalTok{He said That}\StringTok{\textquotesingle{}s amazing!")"}
+\StringTok{str\_view(str\_1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] | "He said That's amazing!"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# No. 2}
+\NormalTok{str\_2 }\OtherTok{\textless{}{-}}\NormalTok{ r}\StringTok{"(}\SpecialCharTok{\textbackslash{}a\textbackslash{}b}\StringTok{\textbackslash{}c\textbackslash{}d)"}
+\FunctionTok{str\_view}\NormalTok{(str\_2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] | \a\b\c\d
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# No. 3}
+\NormalTok{str\_3 }\OtherTok{\textless{}{-}}\NormalTok{ r}\StringTok{"(}\SpecialCharTok{\textbackslash{}\textbackslash{}\textbackslash{}\textbackslash{}\textbackslash{}\textbackslash{}}\StringTok{)"}
+\FunctionTok{str\_view}\NormalTok{(str\_3)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] | \\\\\\
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Create the string in your R session and print it. What happens to the
+  special ``\u00a0''? How does \texttt{str\_view()} display it? Can you
+  do a little googling to figure out what this special character is?
+\end{enumerate}
+
+Ans.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{str\_4 }\OtherTok{\textless{}{-}} \StringTok{"This\textbackslash{}u00a0is\textbackslash{}u00a0tricky"}
+\FunctionTok{str\_view}\NormalTok{(str\_4)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] | This{\u00a0}is{\u00a0}tricky
+\end{verbatim}
+
+The unicode character u+00a0 (\texttt{\textbackslash{}u00a0}) stands for
+no-break space. This is a space character that prevents an automatic
+line break at its position.
+
+\subsubsection{Creating many strings from
+data}\label{creating-many-strings-from-data}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{str\_c}: takes any number of vectors as agruments and returns
+  a character vector:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "xy"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "xyz"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_c}\NormalTok{(}\StringTok{"Hello, "}\NormalTok{, }\FunctionTok{c}\NormalTok{(}\StringTok{"John"}\NormalTok{, }\StringTok{"Susan"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Hello, John"  "Hello, Susan"
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{str\_c} is similar to \texttt{past0()}, but is designed to be
+  used with \texttt{mutate()}:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{name =} \FunctionTok{c}\NormalTok{(}\StringTok{"Flora"}\NormalTok{, }\StringTok{"David"}\NormalTok{, }\StringTok{"Terra"}\NormalTok{, }\ConstantTok{NA}\NormalTok{))}
+\NormalTok{df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{greeting =} \FunctionTok{str\_c}\NormalTok{(}\StringTok{"Hi "}\NormalTok{, name, }\StringTok{"!"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 2
+##   name  greeting 
+##   <chr> <chr>    
+## 1 Flora Hi Flora!
+## 2 David Hi David!
+## 3 Terra Hi Terra!
+## 4 <NA>  <NA>
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{coalesce()} displays \texttt{NA}s in a different way:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{greeting1 =} \FunctionTok{str\_c}\NormalTok{(}\StringTok{"Hi "}\NormalTok{, }\FunctionTok{coalesce}\NormalTok{(name, }\StringTok{"you"}\NormalTok{), }\StringTok{"!"}\NormalTok{),}
+    \AttributeTok{greeting2 =} \FunctionTok{coalesce}\NormalTok{(}\FunctionTok{str\_c}\NormalTok{(}\StringTok{"Hi"}\NormalTok{, name, }\StringTok{"!"}\NormalTok{))}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 3
+##   name  greeting1 greeting2
+##   <chr> <chr>     <chr>    
+## 1 Flora Hi Flora! HiFlora! 
+## 2 David Hi David! HiDavid! 
+## 3 Terra Hi Terra! HiTerra! 
+## 4 <NA>  Hi you!   <NA>
+\end{verbatim}
+
+\subsubsection{\texorpdfstring{\texttt{str\_glue()}}{str\_glue()}}\label{str_glue}
+
+\begin{itemize}
+\tightlist
+\item
+  Using \texttt{str\_c()} leads to a lot of \texttt{"}, making the code
+  unreadable. \texttt{str\_glue()} behaves in a similar way to f-stings
+  in Python, but works in dplyr:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{greeting =} \FunctionTok{str\_glue}\NormalTok{(}\StringTok{"Hi \{name\}!"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 2
+##   name  greeting 
+##   <chr> <glue>   
+## 1 Flora Hi Flora!
+## 2 David Hi David!
+## 3 Terra Hi Terra!
+## 4 <NA>  Hi NA!
+\end{verbatim}
+
+\begin{itemize}
+\item
+  One drawback of \texttt{str\_glue()} is the way it handles
+  \texttt{NA}s -- \texttt{str\_glue()} converts them to the literal
+  string ``NA''.
+\item
+  To escape the curly brackets character ``\{'' or ``\}'' in
+  \texttt{str\_glue()}, you double it:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{greeting =} \FunctionTok{str\_glue}\NormalTok{(}\StringTok{"\{\{Hi \{name\}!\}\}"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 2
+##   name  greeting   
+##   <chr> <glue>     
+## 1 Flora {Hi Flora!}
+## 2 David {Hi David!}
+## 3 Terra {Hi Terra!}
+## 4 <NA>  {Hi NA!}
+\end{verbatim}
+
+\subsubsection{\texorpdfstring{\texttt{str\_flatten()}}{str\_flatten()}}\label{str_flatten}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{str\_flatten()} takes a character vector and combines each
+  element of the vector into a single string:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_flatten}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "xyz"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_flatten}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{), }\StringTok{", "}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "x, y, z"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_flatten}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{), }\StringTok{", "}\NormalTok{, }\AttributeTok{last =} \StringTok{", and "}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "x, y, and z"
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Using \texttt{str\_flatten()} with \texttt{summarize()}:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\OtherTok{\textless{}{-}} \FunctionTok{tribble}\NormalTok{(}
+  \SpecialCharTok{\textasciitilde{}}\NormalTok{ name, }\SpecialCharTok{\textasciitilde{}}\NormalTok{ fruit,}
+  \StringTok{"Carmen"}\NormalTok{, }\StringTok{"banana"}\NormalTok{,}
+  \StringTok{"Carmen"}\NormalTok{, }\StringTok{"apple"}\NormalTok{,}
+  \StringTok{"Marvin"}\NormalTok{, }\StringTok{"nectarine"}\NormalTok{,}
+  \StringTok{"Terrence"}\NormalTok{, }\StringTok{"cantaloupe"}\NormalTok{,}
+  \StringTok{"Terrence"}\NormalTok{, }\StringTok{"papaya"}\NormalTok{,}
+  \StringTok{"Terrence"}\NormalTok{, }\StringTok{"mandarin"}
+\NormalTok{)}
+
+\NormalTok{df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{group\_by}\NormalTok{(name) }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{summarize}\NormalTok{(}\AttributeTok{fruits =} \FunctionTok{str\_flatten}\NormalTok{(fruit, }\StringTok{", "}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 2
+##   name     fruits                      
+##   <chr>    <chr>                       
+## 1 Carmen   banana, apple               
+## 2 Marvin   nectarine                   
+## 3 Terrence cantaloupe, papaya, mandarin
+\end{verbatim}
+
+\subsubsection{Exercises}\label{exercises-1}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Compare and contrast the results of \texttt{paste0} with
+  \texttt{str\_c()} for the following inputs:
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_c}\NormalTok{(}\StringTok{"hi "}\NormalTok{, }\ConstantTok{NA}\NormalTok{)}
+\FunctionTok{str\_c}\NormalTok{(letters[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{], letters[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{3}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# str\_c}
+\FunctionTok{str\_c}\NormalTok{(}\StringTok{"hi "}\NormalTok{, }\ConstantTok{NA}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] NA
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# str\_c(letters[1:2], letters[1:3])}
+
+\CommentTok{\# paste0}
+\FunctionTok{paste0}\NormalTok{(}\StringTok{"hi "}\NormalTok{, }\ConstantTok{NA}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "hi NA"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{paste0}\NormalTok{(letters[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{], letters[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{3}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "aa" "bb" "ac"
+\end{verbatim}
+
+\texttt{str\_c()} cannot threw an error running the second line due to
+``incompatible size''
+
+\subsection{Extracting data from
+strings}\label{extracting-data-from-strings}
+
+\subsubsection{Separating into rows}\label{separating-into-rows}
+
+\begin{itemize}
+\tightlist
+\item
+  The most common tool is \texttt{separate\_longer\_delim()}:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df1 }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{x =} \FunctionTok{c}\NormalTok{(}\StringTok{"a,b,c"}\NormalTok{, }\StringTok{"d,e"}\NormalTok{, }\StringTok{"f"}\NormalTok{))}
+\NormalTok{df1 }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_longer\_delim}\NormalTok{(x, }\AttributeTok{delim =} \StringTok{","}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 6 x 1
+##   x    
+##   <chr>
+## 1 a    
+## 2 b    
+## 3 c    
+## 4 d    
+## 5 e    
+## 6 f
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Using \texttt{separate\_longer\_position()}:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df2 }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{x =} \FunctionTok{c}\NormalTok{(}\StringTok{"1211"}\NormalTok{, }\StringTok{"131"}\NormalTok{, }\StringTok{"21"}\NormalTok{))}
+\NormalTok{df2 }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_longer\_position}\NormalTok{(x, }\AttributeTok{width =} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 9 x 1
+##   x    
+##   <chr>
+## 1 1    
+## 2 2    
+## 3 1    
+## 4 1    
+## 5 1    
+## 6 3    
+## 7 1    
+## 8 2    
+## 9 1
+\end{verbatim}
+
+\subsubsection{Separating into columns}\label{separating-into-columns}
+
+\begin{itemize}
+\tightlist
+\item
+  Using \texttt{separate\_wider\_delim()}:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df3 }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{x =} \FunctionTok{c}\NormalTok{(}\StringTok{"a10.1.2022"}\NormalTok{, }\StringTok{"b10.2.2011"}\NormalTok{, }\StringTok{"e15.1.2015"}\NormalTok{))}
+
+\NormalTok{df3 }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_wider\_delim}\NormalTok{(}
+\NormalTok{    x, }\AttributeTok{delim =} \StringTok{"."}\NormalTok{,}
+    \AttributeTok{names =} \FunctionTok{c}\NormalTok{(}\StringTok{"code"}\NormalTok{, }\StringTok{"edition"}\NormalTok{, }\StringTok{"year"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 3
+##   code  edition year 
+##   <chr> <chr>   <chr>
+## 1 a10   1       2022 
+## 2 b10   2       2011 
+## 3 e15   1       2015
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Using the argument \texttt{NA} in \texttt{searate\_wider\_delim()} to
+  omit a piece from the source vector :
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df3 }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_wider\_delim}\NormalTok{(}
+\NormalTok{    x, }
+    \AttributeTok{delim =} \StringTok{"."}\NormalTok{,}
+    \AttributeTok{names =} \FunctionTok{c}\NormalTok{(}\StringTok{"code"}\NormalTok{, }\ConstantTok{NA}\NormalTok{, }\StringTok{"year"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 2
+##   code  year 
+##   <chr> <chr>
+## 1 a10   2022 
+## 2 b10   2011 
+## 3 e15   2015
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{separate\_wider\_position()} generally requires a known fixed
+  set of columns:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df4 }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{x =} \FunctionTok{c}\NormalTok{(}\StringTok{"202215TX"}\NormalTok{, }\StringTok{"202122LA"}\NormalTok{, }\StringTok{"202325CA"}\NormalTok{))}
+\NormalTok{df4 }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_wider\_position}\NormalTok{(}
+\NormalTok{    x,}
+    \AttributeTok{widths =} \FunctionTok{c}\NormalTok{(}\AttributeTok{year =} \DecValTok{4}\NormalTok{, }\AttributeTok{age =} \DecValTok{2}\NormalTok{, }\AttributeTok{state =} \DecValTok{2}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 3
+##   year  age   state
+##   <chr> <chr> <chr>
+## 1 2022  15    TX   
+## 2 2021  22    LA   
+## 3 2023  25    CA
+\end{verbatim}
+
+\subsubsection{Diagnosing widening
+problems}\label{diagnosing-widening-problems}
+
+-If the width of a column is not known, the tools \texttt{too\_few} and
+\texttt{too\_many} can be useful:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{x =} \FunctionTok{c}\NormalTok{(}\StringTok{"1{-}1{-}1"}\NormalTok{, }\StringTok{"1{-}1{-}2"}\NormalTok{, }\StringTok{"1{-}3"}\NormalTok{, }\StringTok{"1{-}3{-}2"}\NormalTok{, }\StringTok{"1"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+Running the code below will not work:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_wider\_delim}\NormalTok{(}
+\NormalTok{    x,}
+    \AttributeTok{delim =} \StringTok{"{-}"}\NormalTok{,}
+    \AttributeTok{names =} \FunctionTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+This code will throw the following error:
+
+\begin{verbatim}
+#> Error in `separate_wider_delim()`:
+#> ! Expected 3 pieces in each element of `x`.
+#> ! 2 values were too short.
+#> ℹ Use `too_few = "debug"` to diagnose the problem.
+#> ℹ Use `too_few = "align_start"/"align_end"` to silence this message
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  We can use these error messages to debug our code:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{debug }\OtherTok{\textless{}{-}}\NormalTok{ df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_wider\_delim}\NormalTok{(}
+\NormalTok{    x,}
+    \AttributeTok{delim =} \StringTok{"{-}"}\NormalTok{,}
+    \AttributeTok{names =} \FunctionTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{),}
+    \AttributeTok{too\_few =} \StringTok{"debug"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Debug mode activated: adding variables `x_ok`, `x_pieces`, and
+## `x_remainder`.
+\end{verbatim}
+
+Looking at the contents of \texttt{debug}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{debug}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 5 x 6
+##   x     y     z     x_ok  x_pieces x_remainder
+##   <chr> <chr> <chr> <lgl>    <int> <chr>      
+## 1 1-1-1 1     1     TRUE         3 ""         
+## 2 1-1-2 1     2     TRUE         3 ""         
+## 3 1-3   3     <NA>  FALSE        2 ""         
+## 4 1-3-2 3     2     TRUE         3 ""         
+## 5 1     <NA>  <NA>  FALSE        1 ""
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  The \texttt{x\_ok} column tells us where the problem occurred:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{debug }\SpecialCharTok{|\textgreater{}} \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\NormalTok{x\_ok)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 2 x 6
+##   x     y     z     x_ok  x_pieces x_remainder
+##   <chr> <chr> <chr> <lgl>    <int> <chr>      
+## 1 1-3   3     <NA>  FALSE        2 ""         
+## 2 1     <NA>  <NA>  FALSE        1 ""
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  The \texttt{x\_pieces} column how many pieces were found. In this case
+  we are expecting 3, but we only found 2 and 1 pieces. Now we know that
+  the problem was due to having ``too\_few'' pieces. We can fill them
+  with \texttt{NA}s to avoid R from throwing an error.\\
+\item
+  We can then use the argument \texttt{too\_few\ =\ "align\_start"} or
+  \texttt{too\_few\ =\ "align\_end"} to control where the \texttt{NA}s
+  should go.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_wider\_delim}\NormalTok{(}
+\NormalTok{    x,}
+    \AttributeTok{delim =} \StringTok{"{-}"}\NormalTok{,}
+    \AttributeTok{names =} \FunctionTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{),}
+    \AttributeTok{too\_few =} \StringTok{"align\_start"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 5 x 3
+##   x     y     z    
+##   <chr> <chr> <chr>
+## 1 1     1     1    
+## 2 1     1     2    
+## 3 1     3     <NA> 
+## 4 1     3     2    
+## 5 1     <NA>  <NA>
+\end{verbatim}
+
+What if we have too many pieces?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df }\OtherTok{\textless{}{-}} \FunctionTok{tibble}\NormalTok{(}\AttributeTok{x =} \FunctionTok{c}\NormalTok{(}\StringTok{"1{-}1{-}1"}\NormalTok{, }\StringTok{"1{-}1{-}2"}\NormalTok{, }\StringTok{"1{-}3{-}5{-}6"}\NormalTok{, }\StringTok{"1{-}3{-}2"}\NormalTok{, }\StringTok{"1{-}3{-}5{-}7{-}9"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{itemize}
+\tightlist
+\item
+  Using the argument \texttt{too\_many}:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{debug }\OtherTok{\textless{}{-}}\NormalTok{ df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_wider\_delim}\NormalTok{(}
+\NormalTok{    x,}
+    \AttributeTok{delim =} \StringTok{"{-}"}\NormalTok{,}
+    \AttributeTok{names =} \FunctionTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{),}
+    \AttributeTok{too\_many =} \StringTok{"debug"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Debug mode activated: adding variables `x_ok`, `x_pieces`, and
+## `x_remainder`.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{debug }\SpecialCharTok{|\textgreater{}} \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\NormalTok{x\_ok)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 2 x 6
+##   x         y     z     x_ok  x_pieces x_remainder
+##   <chr>     <chr> <chr> <lgl>    <int> <chr>      
+## 1 1-3-5-6   3     5     FALSE        4 -6         
+## 2 1-3-5-7-9 3     5     FALSE        5 -7-9
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  The \texttt{x\_remainder} column also shows the excess pieces.\\
+\item
+  We can opt to drop the excess pieces or merge them into the last
+  column:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# dropping the excess pieces}
+\NormalTok{df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_wider\_delim}\NormalTok{(}
+\NormalTok{    x, }
+    \AttributeTok{delim =} \StringTok{"{-}"}\NormalTok{,}
+    \AttributeTok{names =} \FunctionTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{),}
+    \AttributeTok{too\_many =} \StringTok{"drop"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 5 x 3
+##   x     y     z    
+##   <chr> <chr> <chr>
+## 1 1     1     1    
+## 2 1     1     2    
+## 3 1     3     5    
+## 4 1     3     2    
+## 5 1     3     5
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# merging the excess into the last column}
+\NormalTok{df }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{separate\_wider\_delim}\NormalTok{(}
+\NormalTok{    x,}
+    \AttributeTok{delim =} \StringTok{"{-}"}\NormalTok{,}
+    \AttributeTok{names =} \FunctionTok{c}\NormalTok{(}\StringTok{"x"}\NormalTok{, }\StringTok{"y"}\NormalTok{, }\StringTok{"z"}\NormalTok{),}
+    \AttributeTok{too\_many =} \StringTok{"merge"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 5 x 3
+##   x     y     z    
+##   <chr> <chr> <chr>
+## 1 1     1     1    
+## 2 1     1     2    
+## 3 1     3     5-6  
+## 4 1     3     2    
+## 5 1     3     5-7-9
+\end{verbatim}
+
+\subsection{Working with individual letters within a
+string}\label{working-with-individual-letters-within-a-string}
+
+\subsubsection{Length}\label{length}
+
+\begin{itemize}
+\tightlist
+\item
+  Getting the string length using \texttt{str\_length}:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_length}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\StringTok{"a"}\NormalTok{, }\StringTok{"R for data science"}\NormalTok{, }\ConstantTok{NA}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1]  1 18 NA
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Using \texttt{str\_length()} in dplyr:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{babynames }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{count}\NormalTok{(}\AttributeTok{length =} \FunctionTok{str\_length}\NormalTok{(name), }\AttributeTok{wt =}\NormalTok{ n)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 14 x 2
+##    length        n
+##     <int>    <int>
+##  1      2   338150
+##  2      3  8589596
+##  3      4 48506739
+##  4      5 87011607
+##  5      6 90749404
+##  6      7 72120767
+##  7      8 25404066
+##  8      9 11926551
+##  9     10  1306159
+## 10     11  2135827
+## 11     12    16295
+## 12     13    10845
+## 13     14     3681
+## 14     15      830
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Another example:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{babynames }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{filter}\NormalTok{(}\FunctionTok{str\_length}\NormalTok{(name) }\SpecialCharTok{==} \DecValTok{15}\NormalTok{) }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{count}\NormalTok{(name, }\AttributeTok{wt =}\NormalTok{ n, }\AttributeTok{sort =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 34 x 2
+##    name                n
+##    <chr>           <int>
+##  1 Franciscojavier   123
+##  2 Christopherjohn   118
+##  3 Johnchristopher   118
+##  4 Christopherjame   108
+##  5 Christophermich    52
+##  6 Ryanchristopher    45
+##  7 Mariadelosangel    28
+##  8 Jonathanmichael    25
+##  9 Christianjoseph    22
+## 10 Christopherjose    22
+## # i 24 more rows
+\end{verbatim}
+
+\subsubsection{Subsetting}\label{subsetting}
+
+\begin{itemize}
+\tightlist
+\item
+  Using \texttt{str\_sub()}:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"Apple"}\NormalTok{, }\StringTok{"Banana"}\NormalTok{, }\StringTok{"Pear"}\NormalTok{)}
+
+\FunctionTok{str\_sub}\NormalTok{(x, }\DecValTok{1}\NormalTok{, }\DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "App" "Ban" "Pea"
+\end{verbatim}
+
+\begin{itemize}
+\item
+  The length of the subset is equal to \texttt{end\ -\ start\ +\ 1}.
+\item
+  Similar to Python, we can use \texttt{-1} to refer to the last
+  character, -2 to the second to last character, etc. (but this is not
+  0-indexed!)
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_sub}\NormalTok{(x, }\SpecialCharTok{{-}}\DecValTok{3}\NormalTok{, }\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "ple" "ana" "ear"
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  But unlike Python, subsetting won't fail here if the string is too
+  short -- it will just return as much as possible.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_sub}\NormalTok{(}\StringTok{"a"}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{5}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "a"
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Using \texttt{str\_sub()} in dplyr:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{babynames }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{first =} \FunctionTok{str\_sub}\NormalTok{(name, }\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{),}
+    \AttributeTok{last =} \FunctionTok{str\_sub}\NormalTok{(name, }\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{, }\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 1,924,665 x 7
+##     year sex   name          n   prop first last 
+##    <dbl> <chr> <chr>     <int>  <dbl> <chr> <chr>
+##  1  1880 F     Mary       7065 0.0724 M     y    
+##  2  1880 F     Anna       2604 0.0267 A     a    
+##  3  1880 F     Emma       2003 0.0205 E     a    
+##  4  1880 F     Elizabeth  1939 0.0199 E     h    
+##  5  1880 F     Minnie     1746 0.0179 M     e    
+##  6  1880 F     Margaret   1578 0.0162 M     t    
+##  7  1880 F     Ida        1472 0.0151 I     a    
+##  8  1880 F     Alice      1414 0.0145 A     e    
+##  9  1880 F     Bertha     1320 0.0135 B     a    
+## 10  1880 F     Sarah      1288 0.0132 S     h    
+## # i 1,924,655 more rows
+\end{verbatim}
+
+\subsection{Non-English text}\label{non-english-text}
+
+\begin{itemize}
+\tightlist
+\item
+  Using \texttt{charToRaw()} to convert a character to its hexadecimal
+  form (aka the ASCII encoding):
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{charToRaw}\NormalTok{(}\StringTok{"Hadley"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 48 61 64 6c 65 79
+\end{verbatim}
+
+\begin{itemize}
+\item
+  While ASCII coverage for symbols is limited, UTF-8 can encode just
+  about every character, as well as other symbols, like smileys and
+  other icons and shapes.
+\item
+  UTF-8 can also ``fail'' when the input uses a different character
+  encoding. Here is an example using \texttt{read\_csv} from the
+  \textbf{readr} package:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x1 }\OtherTok{\textless{}{-}} \StringTok{"text}\SpecialCharTok{\textbackslash{}n}\StringTok{El Ni}\SpecialCharTok{\textbackslash{}xf1}\StringTok{o was particularly bad this year"}
+\FunctionTok{read\_csv}\NormalTok{(x1)}\SpecialCharTok{$}\NormalTok{text}
+
+\NormalTok{x2 }\OtherTok{\textless{}{-}} \StringTok{"text}\SpecialCharTok{\textbackslash{}n\textbackslash{}x82\textbackslash{}xb1\textbackslash{}x82\textbackslash{}xf1\textbackslash{}x82\textbackslash{}xc9\textbackslash{}x82\textbackslash{}xbf\textbackslash{}x82\textbackslash{}xcd}\StringTok{"}
+\FunctionTok{read\_csv}\NormalTok{(x2)}\SpecialCharTok{$}\NormalTok{text}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{itemize}
+\tightlist
+\item
+  We can specify the correct encoding via the \texttt{locale} argument.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{read\_csv}\NormalTok{(x1, }\AttributeTok{locale =} \FunctionTok{locale}\NormalTok{(}\AttributeTok{encoding =} \StringTok{"Latin1"}\NormalTok{))}\SpecialCharTok{$}\NormalTok{text}
+\FunctionTok{read\_csv}\NormalTok{(x2, }\AttributeTok{locale =} \FunctionTok{locale}\NormalTok{(}\AttributeTok{encoding =} \StringTok{"Shift{-}JIS"}\NormalTok{))}\SpecialCharTok{$}\NormalTok{text}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Letter variations}\label{letter-variations}
+
+\begin{itemize}
+\tightlist
+\item
+  These two letters might look the same:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{u }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"\textbackslash{}u00fc"}\NormalTok{, }\StringTok{"u\textbackslash{}u0308"}\NormalTok{)}
+\FunctionTok{str\_view}\NormalTok{(u)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] | ü
+## [2] | ü
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  But they differ in length:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_length}\NormalTok{(u)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1 2
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  However, the string comparator function \texttt{str\_equal()} from
+  \textbf{stringr} still recognizes that both have the same appearance:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{u[[}\DecValTok{1}\NormalTok{]] }\SpecialCharTok{==}\NormalTok{ u[[}\DecValTok{2}\NormalTok{]]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] FALSE
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_equal}\NormalTok{(u[[}\DecValTok{1}\NormalTok{]], u[[}\DecValTok{2}\NormalTok{]])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] TRUE
+\end{verbatim}
+
+\subsubsection{Locale-dependent
+functions}\label{locale-dependent-functions}
+
+\begin{itemize}
+\item
+  To check which locale is supported in \textbf{stringr}, use this
+  command: \texttt{stringi::stri\_locale\_list()}.
+\item
+  Example of difference in language rules depending on locale:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_to\_upper}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\StringTok{"i"}\NormalTok{, }\StringTok{"ı"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "I" "I"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_to\_upper}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\StringTok{"i"}\NormalTok{, }\StringTok{"ı"}\NormalTok{), }\AttributeTok{locale =} \StringTok{"tr"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "İ" "I"
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Example of difference in sorting rules depending on locale:
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_sort}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\StringTok{"a"}\NormalTok{, }\StringTok{"c"}\NormalTok{, }\StringTok{"ch"}\NormalTok{, }\StringTok{"h"}\NormalTok{, }\StringTok{"z"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "a"  "c"  "ch" "h"  "z"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{str\_sort}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\StringTok{"a"}\NormalTok{, }\StringTok{"c"}\NormalTok{, }\StringTok{"ch"}\NormalTok{, }\StringTok{"h"}\NormalTok{, }\StringTok{"z"}\NormalTok{), }\AttributeTok{locale =} \StringTok{"cs"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "a"  "c"  "h"  "ch" "z"
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  The \texttt{arrange()} function in \textbf{dplyr} is also
+  locale-dependent.
+\end{itemize}
+
+\end{document}

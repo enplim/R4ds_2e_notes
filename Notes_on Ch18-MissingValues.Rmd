@@ -1,0 +1,200 @@
+---
+title: 'Notes on Chapter 18: Missing Values'
+author: "Norman Lim"
+date: "2025-08-03"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Prerequisites
+
+```{r}
+library(tidyverse)
+```
+
+### Last observation carried forward
+
+```{r}
+treatment <- tribble(
+  ~person,            ~treatment, ~response,
+  "Derrick Whitmore", 1,          7,
+  NA,                 2,          10,
+  NA,                 3,          NA,
+  "Katherine Burke",  1,          4
+)
+```
+
+- Using `fill()` to fill missing values by carrying the last observation forward aka **locf**:
+```{r}
+treatment |> 
+  fill(everything())
+```
+
+
+### Filling missing values using fixed values:
+
+- Using `coalesce()`:
+```{r}
+x <- c(1, 4, 5, 7, NA)
+
+coalesce(x, 0)
+```
+
+Sometimes, in the data, other values are used to represent missing values, like `99` or `-999`. We can replace them with `NA` using the `na_if()` function:
+```{r}
+x <- c(1, 4, 5, 7, -99)
+na_if(x, -99)
+```
+
+### NaN
+`NaN` generally behaves like `NA`:
+```{r}
+x <- c(NA, NaN)
+x * 10
+x == 1
+is.na(x)
+```
+
+- In case you need to distinguis `NA`, from `NaN`, use `is.nan()`:
+```{r}
+is.nan(x)
+```
+
+`NaN`s are usually produced when you perform a mathematical operation that has an indeterminate result:
+```{r}
+0 / 0
+0 * Inf
+Inf - Inf
+sqrt(-1)
+```
+
+
+## Implicit missing values
+
+- Example: an entire row of data is missing.
+```{r}
+stocks <- tibble(
+  year  = c(2020, 2020, 2020, 2020, 2021, 2021, 2021),
+  qtr   = c(   1,    2,    3,    4,    2,    3,    4),
+  price = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+
+stocks
+```
+
+- In the dataset above, price in the fourth quarter of 2020 is explicitly missing because its value is `NA`
+- The `price` for the first quarter of 2021 is implicitly missing because it does not appear in the dataset. 
+
+In other words:
+
+> An explicit missing value is the presence of an absence.
+> An implicit missing value is the absence of a presence.
+
+
+### Pivoting
+
+- Pivoting can make implicit missings explicit and vice versa:
+```{r}
+stocks |> 
+  pivot_wider(
+    names_from = qtr,
+    values_from = price
+  )
+```
+
+### Complete
+
+`tidyr::complete()` allows you to generate explicit missing values by providing a set of variables that define the combination of rows that should exist. Example:
+```{r}
+stocks |> 
+  complete(year, qtr)
+```
+
+If the individual variables are not complete aka there is not enough example for `complete()` to draw from, you can specify the missing part:
+```{r}
+stocks |> 
+  complete(year = 2019:2021, qtr)
+```
+
+### Joins
+
+The function `dplyr::anit_join(x, y)` is a useful tool in revealing rows in `x` that don't have match in `y`. Example:
+```{r}
+library(nycflights13)
+
+flights |> 
+  distinct(faa = dest) |> 
+  anti_join(airports)
+
+
+flights |> 
+  distinct(tailnum) |> 
+  anti_join(planes)
+```
+
+
+### Exercises
+1. Can you find any relationship between the carrier and the rows that appear to be missing from `planes`?
+
+
+## Factors and empty groups
+
+This can happen if the factors do not contain all the possible entries specified in the labels. Example:
+```{r}
+health <- tibble(
+  name = c("Ikaia", "Oletta", "Leriah", "Dahsay", "Tresaun"),
+  smoker = factor(c("no", "no", "no", "no", "no"), levels = c("yes", "no")),
+  age = c(34, 88, 75, 47, 56)
+)
+
+health |> count(smoker)
+```
+
+We can force `count()` to keep all the groups using `.drop = FALSE`:
+```{r}
+health |> count(smoker, .drop = FALSE)
+```
+
+Similar issues can occur when plotting:
+```{r}
+ggplot(health, aes(x = smoker)) +
+  geom_bar() +
+  scale_x_discrete()
+
+ggplot(health, aes(x = smoker)) +
+  geom_bar() +
+  scale_x_discrete(drop = FALSE)
+```
+
+Similar issues can occur when grouping. Again the solution is to supply the `.drop = FALSE` argument:
+```{r}
+health |> 
+  group_by(smoker, .drop = FALSE) |> 
+  summarize(
+    n = n(),
+    mean_age = mean(age),
+    min_age = min(age),
+    max_age = max(age),
+    sd_age = sd(age)
+  )
+```
+
+We got warnings and "interesting" results when we summarized the empty group. Empty vectors have `0` length, while missing values have length of `1`.
+
+To avoid these results (and the warnings!), we can use `complete()` to make the implicit missing values explicit:
+```{r}
+health |> 
+  group_by(smoker) |> 
+  summarize(
+    n = n(),
+    mean_age = mean(age),
+    min_age = min(age),
+    max_age = max(age),
+    sd_age = sd(age)
+  ) |> 
+  complete(smoker)
+```
+
+The main drawback of this method: the results of `count` was also rendered `NA` instead of 0 for the missing group. 
+

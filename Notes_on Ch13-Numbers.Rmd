@@ -1,0 +1,663 @@
+---
+title: "Notes on Chapter 13 -- Numbers"
+author: "Norman Lim"
+date: "2025-07-27"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Prerequisites
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+## Making numbers
+
+- parsing strings into numbers using  the `readr` package:
+```{r}
+x <- c("1.2", "5.6", "1e6")
+
+parse_double(x)
+```
+
+- parsing when the intended string contains non-numeric text that needs to be ignored:
+```{r}
+x <- c("$1,234", "USD 3,513", "59%")
+
+parse_number(x)
+```
+
+
+## Counts
+
+- Using `count` for quick exploration and checks:
+```{r}
+flights |> count(dest)
+```
+
+- Using `count` to see the most common values:
+```{r}
+flights |> count(dest, sort = TRUE)
+```
+
+- To see all the results, we can add ` |> View()` or ` |> print(n = Inf)`
+
+- Doing `count()` "by hand" using `group_by()`, `summarize()`, and `n()`. (Useful if you want to compute for other summaries too.)
+```{r}
+flights |> 
+  group_by(dest) |> 
+  summarize(
+    n = n(),
+    delay = mean(arr_delay, na.rm = TRUE)
+  )
+```
+
+
+- Counting distinct values using `n_distinct()`:
+```{r}
+flights |> 
+  group_by(dest) |> 
+  summarize(carriers= n_distinct(carrier)) |> 
+  arrange(desc(carriers))
+```
+
+- Getting a weighted count by summing:
+```{r}
+flights |> 
+  group_by(tailnum) |> 
+  summarize(miles = sum(distance))
+```
+
+
+- Getting a weighted count using the `wt` argument to `count()`:
+```{r}
+flights |> count(tailnum, wt = distance)
+```
+
+
+- Counting the number of missing values by combining `sum()` and `is.na()`:
+```{r}
+flights |> 
+  group_by(dest) |> 
+  summarize(n_cancelled = sum(is.na(dep_time)))
+```
+
+### Exercises
+1. How can you use `count()` to count the number of rows with a missing value for a given variable?
+
+Ans. 
+Combine `count()` with `is.na()`.
+```{r}
+flights |> 
+  count(is.na(dep_time)) |> 
+  rename(
+    is_na = `is.na(dep_time)`,
+    count = n
+  ) |> 
+  mutate(is_na = if_else(is_na == FALSE, "not missing", "missing"))
+```
+
+2. Expand the following calls to `count()` to instead use `group_by()` `summarize()`, and `arrange()`:
+
+> 1. `flights |> count(dest, sort = TRUE`)
+> 2. `flights |>  count(tailnum, wt = distance`
+
+Ans.
+
+for No. 1
+```{r}
+flights |> 
+  group_by(dest) |> 
+  summarize(
+    n = n()
+  ) |> 
+  arrange(desc(n))
+```
+
+for No. 2
+```{r}
+flights |> 
+  group_by(tailnum) |> 
+  summarize(miles = sum(distance))
+```
+
+
+### Arithmetic and recycling rules
+- When the vector lengths are mismatched, the elements of the shorter vector is *recycled* or repeated:
+```{r}
+x <- c(1, 2, 10, 20)
+x / 5
+x / c(5, 5, 5, 5)
+```
+
+- R throws a warning when the length of the longer vector is not a multiple of the length of the shorter vector:
+```{r}
+x * c(1, 2)
+x * c(1, 2, 3)
+```
+
+- Recycling rules are also applied to logical comparisons.
+
+
+### Minimum and Maximum
+
+- The functions `pmin()` and `pmax()` return the smallest or largest value in each row:
+```{r}
+df <- tribble(
+  ~x, ~y,
+  1, 3,
+  5, 2,
+  7, NA
+)
+
+df |> 
+  mutate(
+    min = pmin(x, y, na.rm = TRUE),
+    max = pmax(x, y, na.rm = TRUE)
+  )
+```
+
+
+### Modular arithmetic
+ 
+- The function `%/%` gives the integer part of the quotient and `%%` gives the remainder:
+```{r}
+1:10 %/% 3
+1:10 %% 3
+```
+
+- Modular arithmetic is handy for unpacking time into `hour` and `minute`:
+```{r}
+flights |> 
+  mutate(
+    hour = sched_dep_time %/% 100,
+    minute = sched_dep_time %% 100,
+    .keep = "used"
+  )
+```
+
+
+- From section 12, we learned to determine the proportion of TRUE values to FALSE values in a logical vector by using `mean()`.  
+- Combining this with modular arithmetic, we can plot the proportion of cancelled flights against the hour:
+```{r}
+flights |> 
+  group_by(hour = sched_dep_time %/% 100) |> 
+  summarize(
+    prop_cancelled = mean(is.na(dep_time)),
+    n = n()
+  ) |> 
+  filter(hour > 1) |> 
+  ggplot(aes(x = hour, y = prop_cancelled)) +
+  geom_line(color = "grey50") +
+  geom_point(aes(size = n))
+```
+
+
+This is a condensed version of the code below:
+```{r}
+flights |> 
+  mutate(hour = sched_dep_time %/% 100) |>
+  group_by(hour) |> 
+  summarize(
+    prop_cancelled = mean(is.na(dep_time)), 
+    n = n()
+  ) |> 
+  filter(hour > 1) |> 
+  ggplot(aes(x = hour, y = prop_cancelled)) +
+  geom_line(color = "grey50") +
+  geom_point(aes(size = n))
+```
+
+
+### Logarithms
+
+- Useful for dealing with data that ranges across multiple orders of magnitude.  
+- `log2()` and `log10()` are generally easier to interpret than logs of other bases.  
+- In base 2, every one step "forward" corresponds to doubling on the original scale, and every step "backward" corresponds to halving -- think of the f-stops in photography.  
+
+
+### Rounding
+
+- Rounding to the nearest integer:
+```{r}
+round(123.456)
+```
+
+- Changing the precision of rounding using the `digits` argument:
+```{r}
+round(123.456, digits = 2)  # two digits to the right of decimal point
+round(123.456, 1)           # one digit...
+round(123.456, -1)          # nearest ten
+round(123.456, -2)          # nearest hundred
+```
+
+- R uses a rounding scheme called "Banker's rounding" -- a number halfway between two integers will be rounded to the even integer.
+```{r}
+round(c(1.5, 2.5))
+```
+
+
+- Because of this rounding scheme, we need to use `floor()` or `ceiling()` if we want to specifically round up or round down:
+```{r}
+x <- 123.456
+
+floor(x)
+ceiling(x)
+```
+
+- Since `floor()` and `ceiling()` don't have a `digits` argument, here's a trick you can use to control the number of digits used in rounding:
+```{r}
+# Round down to the nearest two digits
+floor(x / 0.01) * 0.01
+
+# Round up to the nearest two digits
+ceiling(x / 0.01) * 0.01
+```
+
+
+### Cutting numbers into ranges
+
+- Using `cut()` to break up a numeric vector into discrete buckets or bins:
+```{r}
+x <- c(1, 2, 5, 10, 15, 20)
+
+# With even spacing
+cut(x, breaks = c(0, 5, 10, 15, 20))
+
+# With uneven spacing
+cut(x, breaks = c(0, 5, 10, 100))
+
+# breeaks with custom labels
+cut(x,
+  breaks = c(0, 5, 10, 15, 20),
+  labels = c("small", "medium", "large", "extra_large")
+)
+```
+
+- Any values outside the range of `breaks` will become `NA`
+```{r}
+y <- c(NA, -10, 5, 10, 30)
+cut(y, breaks = c(0, 5, 10, 15, 20))
+
+```
+
+
+### Cummulative and rolling aggregates
+
+- Base R provides functions that start with `cum`:
+```{r}
+x <- 1:10
+cumsum(x)
+
+s <- 1:100
+cumsum(s)
+```
+
+This will make Gauss smile for sure.
+
+- More functions for rolling or sliding aggregates are available in the `slider` package.
+
+
+### Exercises
+3. Currently `dep_time` and `sched_time` are convenient to look at, but hard to compute with because they're not really continuous numbers. You can see the basic problem by running the code below: there's a gap between each hour.
+```{r}
+flights |> 
+  filter(month == 1, day == 1) |> 
+  ggplot(aes(x = sched_dep_time, y = dep_delay)) +
+  geom_point()
+```
+
+Convert them to a more truthful representation of time (either fractional hours or minutes since midnight).
+
+Ans.
+```{r}
+flights |> 
+  mutate(
+    hour = sched_dep_time %/% 100,
+    minute = sched_dep_time %% 100,
+    decimal_time = hour + minute / 60
+  ) |> 
+  filter(month == 1, day == 1) |> 
+  ggplot(aes(x = decimal_time, y = dep_delay)) +
+  geom_point()
+```
+
+4. Round `dep_time` and `arr_time` to the nearest five minutes.
+
+Ans.
+```{r}
+flights |> 
+  mutate(
+    dep_hour = dep_time %/% 100,
+    dep_minute = sched_dep_time %% 100,
+    dep_minute = round(dep_minute / 5) * 5,
+    dep_hour = if_else(dep_minute == 60, dep_hour + 1, dep_hour),
+    dep_minute = if_else(dep_minute == 60, 0, dep_minute),
+    .after = dep_time
+  )
+
+# Similar approach for arr_time.
+```
+
+
+## General transformations
+
+### Ranks
+
+- `min_rank()` uses the typical method for dealing with ties:
+```{r}
+x <- c(1, 2, 2, 3, 4, NA)
+min_rank(x)
+```
+
+- Using `desc()` to rank from highest to lowest:
+```{r}
+min_rank(desc(x))
+```
+
+- Examples of other ranking functions:
+```{r}
+df <- tibble(x = x)
+df |> 
+  mutate(
+    row_number = row_number(x),
+    dense_rank = dense_rank(x),
+    percent_rank = percent_rank(x),
+    cume_dist = cume_dist(x)
+  )
+```
+
+Important arguments for `rank()` functions:
+- `ties.method`: for breaking ties
+- `na.last = "keep:`: to keep `NA`s as `NA`
+
+
+- `row_number()`, when used without any arguments will give the "current" row.  
+- We can take advantage of this when we need to divide data into similarly sized groups:
+```{r}
+df <- tibble(id = 1:10)
+
+df |> 
+  mutate(
+    row0 = row_number() - 1,
+    three_groups = row0 %% 3,
+    three_in_each_group = row0 %/% 3
+  )
+```
+
+
+### Offsets
+- Using `lead()` and `lag()`:
+```{r}
+x <- c(2, 5, 11, 11, 19, 35)
+
+lag(x)
+lead(x)
+```
+
+Clever uses for `lag()`:
+```{r}
+# Get the difference between current and previous value
+x - lag(x)
+
+# Determine if the current value changes
+x == lag(x)
+```
+
+
+### Consecutive identifiers
+
+- Useful when we want the items to be in a different category after crossing a certain threshold.  
+- Example: A situation where a new session should becin after a gap of more than x minutes since last activity:
+```{r}
+events <- tibble(
+  time = c(0, 1, 2, 3, 5, 10, 12, 15, 17, 19, 20, 27, 28, 30)
+)
+
+events <- events |> 
+  mutate(
+    diff = time - lag(time, default = first(time)),
+    has_gap = diff >= 5
+  )
+
+events
+```
+
+- Example: Similar situation as before, but we want to get numeric results so that we can apply other functions:
+```{r}
+events |> mutate(
+  group = cumsum(has_gap)
+)
+```
+
+- Example: Create a new grouping every time one of its arguments changes using `consecutive_id()` and `slice_head()`:
+```{r}
+df <- tibble(
+  x = c("a", "a", "a", "b", "c", "c", "d", "e", "a", "a", "b", "b"),
+  y = c(1, 2, 3, 2, 4, 1, 3, 9, 4, 8, 10, 199)
+)
+
+df |> 
+  group_by(id = consecutive_id(x)) |> 
+  slice_head(n = 1)
+```
+
+## Exercises
+1. Find the 10 most delayed flights using a ranking function.
+2. Which plane (`tailnum`) has the worst on-time record?
+3. What time of day should you fly if you want to avoid delays as much as possible?
+4. What does the code do?
+```{r}
+flights |> 
+  group_by(dest) |> 
+  filter(row_number() < 4)
+```
+
+Ans.
+It returns only the first three rows of each group created by `group_by(dest)`. Approximately equal to 105 groups x 3.
+
+What does this code do?
+```{r}
+flights |> 
+  group_by(dest) |> 
+  filter(row_number(dep_delay) < 4)
+```
+
+Ans. 
+It returns only the first three rows of `dep_delay` for each group created by `group_by(dest)`.
+
+5. For each destination, compute the total minutes of delay. For each flight, compute the proportion of the total delay for its destination.
+
+Ans.
+
+Total minutes of delay for each destination:
+```{r}
+flights |> 
+  filter(arr_delay > 0) |> 
+  group_by(dest) |> 
+  summarize(
+    total_arr_delay = sum(arr_delay, na.rm = TRUE)
+  )
+```
+
+Proportion of total delay per destination for each flight:
+```{r}
+flights |> 
+  filter(arr_delay > 0) |> 
+  group_by(tailnum, dest) |> 
+  summarize(
+    ave_prop_arr_delay = mean(arr_delay / sum(arr_delay)),
+    .groups = "drop"
+  )
+```
+
+6. Delays are typically temporally correlated: even once the problem that caused the initial delay has been resolved, later flights are delayed to allow earlier flights to leave. Using `lag()`, explore how the average flight delay for an hour is related to the average delay for the previous hour.
+```{r}
+flights |> 
+  mutate(hour = dep_time %/% 100) |> 
+  group_by(year, month, day, hour) |> 
+  summarize(
+    dep_delay = mean(dep_delay, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  ) |> 
+  mutate(lag = dep_delay - lag(dep_delay))
+```
+
+7. Look at each destination. Can you find flights that are suspiciously fast (i.e. flights that represent a potential data entry error)? Compute the air time of a flight relative to the shortest flight to that destination. Which flights were most delayed in the air?
+
+Ans.
+Based on speed
+```{r}
+flights |> 
+  mutate(
+    speed = distance / (air_time / 60)
+  ) |> 
+  select(carrier, flight, dest, air_time, distance, speed) |> 
+  arrange(desc(speed))
+```
+
+Since the ave. speed of commercial airlines, is usually between 500 to 600 mph, flights that are suspiciously fast or suspiciously slow can be flagged.
+
+We can also do this by getting the standard deviation of `air_time`. Flights whose air time exceed the standard deviation by a certain threshold can be flagged.
+
+Data entry checking based on air time of flight relative to the shortest flight:
+```{r}
+# Showing the top n flights which took longer than the shortest air time
+flights |>
+  select(carrier, flight, dest, air_time, distance) |> 
+  group_by(flight, dest) |> 
+  mutate(
+    shortest_air_time = if_else(air_time == min(air_time), air_time, min(air_time)),
+    prop_to_shortest = air_time / shortest_air_time,
+  ) |> 
+  arrange(desc(prop_to_shortest)) |> 
+  head(10)
+```
+
+
+
+
+8. Find all destinations that are flown by at least two carriers. Use those destinations to come up with a relative ranking of carriers based on their performance for the same destination.
+
+Ans. 
+```{r}
+# ranking carriers based on least amount of delays
+flights |> 
+  select(carrier, dest, dep_delay) |> 
+  group_by(dest, carrier) |> 
+  mutate(
+    n = n()
+  ) |> 
+  filter(n >= 2) |> 
+  summarize(
+    ave_dep_delay = mean(dep_delay, na.rm = TRUE)
+  ) |> 
+  mutate(
+    ranking = rank(ave_dep_delay)
+  ) |> 
+  arrange(dest,ranking) |> 
+  # show the top 4 per destination
+  filter(row_number() < 5)
+```
+
+## Numeric summaries
+
+### Measures of central tendencies
+```{r}
+flights |> 
+  group_by(year, month, day) |> 
+  summarize(
+    mean = mean(dep_delay, na.rm = TRUE),
+    median = median(dep_delay, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  ) |> 
+  ggplot(aes(x = mean, y = median)) +
+  geom_abline(slope = 1, intercept = 0, color = "white") +
+  geom_point()
+```
+
+- There is no **mode** function in R; this is not useful in real-wold data and statisticians tend not to use this function.  
+
+### Minimum, maximum, and quantiles
+
+Looking at the the 95% quantile of a data feature while ignoring the extreme 5% of cases:
+```{r}
+flights |> 
+  group_by(year, month, day) |> 
+  summarize(
+    max = max(dep_delay, na.rm = TRUE),
+    q95 = quantile(dep_delay, 0.95, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+### Spread
+
+- `IQR()` is basically `quantile(x, 0.75) - quantile(x, 0.25).  
+
+Exploring the curious case of EGE Airport using `IQR`:
+```{r}
+flights |> 
+  group_by(origin, dest) |> 
+  summarize(
+    distance_iqr = IQR(distance),
+    n = n(),
+    .groups = "drop"
+  ) |> 
+  filter(distance_iqr > 0)
+```
+
+
+### Distributions
+
+- Frequency plots of `dep_delay` for each day, for 365 days, overlaid, used to check if the distributions for subgroups resemble the whole:
+```{r}
+flights |> 
+  filter(dep_delay < 120) |> 
+  ggplot(aes(x = dep_delay, group = interaction(day, month))) +
+  geom_freqpoly(binwidth = 5, alpha = 1/5)
+```
+
+
+- Whenever creating numerical summaries, it is a good idea to include the number of observations in each group.  
+
+### Extracting values at nth position
+ 
+- Example for extracting the `nth` value using position functions `first`, `last`, and `nth`:
+```{r}
+flights |> 
+  group_by(year, month, day) |> 
+  summarize(
+    first_dep = first(dep_time, na_rm = TRUE),
+    fifth_dep = nth(dep_time, 5, na_rm = TRUE),
+    last_dep = last(dep_time, na_rm = TRUE)
+  )
+```
+
+- Be careful when using `first`, `nth`, and `last` -- the argument for removing `NA`s is `na_rm` and *not* `na.rm`.
+
+- Extracting values at positions using filtering on ranks:
+```{r}
+flights |> 
+  group_by(year, month, day) |> 
+  mutate(r = min_rank(sched_dep_time)) |> 
+  filter(r %in% c(1, max(r)))
+```
+
+
+### Summary functions using `mutate()`
+
+- Useful when a standardized summary function is preferred.
+
+Examples of `mutate` commands for summarizing data:  
+- `x / sum(x)` for getting the proportion of total.  
+- `(x - mean(x)) / sd(x)` for calculating the z-score (standardized to have a mean of 0 and sd of 1).  
+- `(x - min(x)) / (max(x) - min(x))` for standardizing the data range to [0, 1].  
+- `x / first(x)` for generating an index based on the first observation.
+
+
+

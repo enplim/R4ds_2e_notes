@@ -1,0 +1,641 @@
+---
+title: "Notes on Chapter 15 - Regular Expressions"
+author: "Norman Lim"
+date: "2025-07-29"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Prerequisites
+```{r}
+library(tidyverse)
+library(babynames)
+```
+
+## Pattern basics
+
+- Using `str_view()` for basic string pattern matching:
+```{r}
+str_view(fruit, "berry")
+```
+
+- **Literal characters:** Letters and numbers that match exactly.  
+- **Metacharacters:** Puntuation characters that have special meanings for pattern matching.  
+- The dot (`.`) metacharacter will match any string that contains a character that come before it:
+```{r}
+str_view(c("a", "ab", "ae", "bd", "ea", "eab"), "a.")
+```
+
+Example: Find all the the words that contain an `a` followed by three letters, followed by an `e` in `fruits`:
+```{r}
+str_view(fruit, "a...e")
+```
+
+**Quantifiers:** control how many times a pattern can match:  
+- `?`: makes a pattern optional (0 or once).
+- `+`: lets a pattern repeat (at least once).
+- `*`: lets a pattern be optional or repeat (any number of times, including 0).  
+
+Examples:
+```{r}
+# matches an "a" optionally followed by a "b"
+str_view(c("a", "ab", "abb"), "ab?")
+
+# matches an "a" followed by at least one "b"
+str_view(c("a", "ab", "abb"), "ab_")
+
+# matches an "a" followed by any number of "b"s
+str_view(c("a", "ab", "abb"), "ab*")
+```
+
+- **Character classes:** defined by `[]` and match a set of characters. Starting with `^` matches everyting except the character class -- the caret symbol acts like a "not" logic gate.
+```{r}
+str_view(words, "[aeiou]x[aeiou]")
+
+str_view(words, "[^aeiou]l[^aeiou]")
+```
+
+- Using the **alternation** symbol `|` to pick one or more alternative patterns:
+```{r}
+str_view(fruit, "apple|melon|nut")
+
+str_view(fruit, "aa|ee|ii|oo|uu")
+```
+
+
+## Key functions
+
+### Detecting matches 
+
+- Detecting matches using `str_detect()`:
+```{r}
+str_detect(c("a", "b", "c"), "[aeiou]")
+```
+
+- Using `str_detect()` in dplyr:
+```{r}
+babynames |> 
+  filter(str_detect(name, "x")) |> 
+  count(name, wt = n, sort = TRUE)
+```
+
+- Another example using `str_detect()` in dplyr (paired with `summarize()` this time):
+```{r}
+babynames |> 
+  group_by(year) |> 
+  summarize(prop_x = mean(str_detect(name, "x"))) |> 
+  ggplot(aes(x = year, y = prop_x)) +
+  geom_line()
+```
+
+### Counting matches
+
+- Using `str_count()` to determine how many matches:
+```{r}
+x <- c("apple", "banana", "pear")
+
+str_count(x, "p")
+```
+
+- Regex matches never overlap -- each match starts at the end of the previous match:
+```{r}
+str_count("abababa", "aba")
+```
+
+- Using `str_count()` in dplyr, paired with `mutate()`:
+```{r}
+babynames |> 
+  count(name) |> 
+  mutate(
+    vowels = str_count(name, "[aeiou]"),
+    consonants = str_count(name, "[^aeiou]")
+  )
+```
+
+- The above result is not quite correct, since the default pattern matching is case-sensitive.  
+Solution:
+```{r}
+babynames |> 
+  count(name) |> 
+  mutate(
+    vowels = str_count(name, "[aeiouAIEOU]"),
+    consonants = str_count(name, "[^aeiouAEIOU]")
+  )
+```
+
+- Other applicable solutions:
+> Use `vowels = str_count(name, regex("[aeiou]", ignore_case = TRUE))`
+> Use `vowels = str_count(str_to_lower(name), "[aeiou]")
+
+```{r}
+babynames |> 
+  count(name) |> 
+  mutate(
+    name = str_to_lower(name),
+    vowels = str_count(name, "[aeiou]"),
+    consonants = str_count(name, "[^aeiou]")
+  )
+```
+
+### Replacing values
+
+- Using `str_replace()` and/or `str_replace_all()`:
+```{r}
+x <- c("apple", "pear", "banana")
+
+str_replace_all(x, "[aeiou]", "-")
+```
+
+- Using `str_remove()` and/or `str_remove_all()`:
+```{r}
+x <- c("apple", "pear", "banana")
+
+str_remove_all(x, "[aeiou]")
+```
+
+### Extracting variables
+
+- Using `separate_wider_` family of functions:
+```{r}
+df <- tribble(
+  ~str,
+  "<Sheryl>-F_34",
+  "<Kisha>-F_45", 
+  "<Brandon>-N_33",
+  "<Sharon>-F_38", 
+  "<Penny>-F_58",
+  "<Justin>-M_41", 
+  "<Patricia>-F_84", 
+)
+
+df |> 
+  separate_wider_regex(
+    str,
+    patterns = c(
+      "<",
+      name = "[A-Za-z]+",
+      ">-",
+      gender = ".",
+      "_",
+      age = "[0-9]+"
+    )
+  )
+```
+
+### Exercises
+1. What baby name has the most vowels? What name has the highest proportion of vowels? (Hint: what is the denominator?)
+
+Ans.
+
+baby name with the most vowels:
+```{r}
+babynames |> 
+  mutate(
+    name = str_to_lower(name),
+    vowels = str_count(name, "[aeiou]")
+  ) |> 
+  filter(
+    vowels == max(vowels)) |> 
+  distinct(name, .keep = vowels) |> 
+  rename(vowels = .keep)
+  
+  
+```
+
+
+Baby name with the highest proportion of vowels:
+```{r}
+babynames |> 
+  mutate(
+    name = str_to_lower(name),
+    vowels = str_count(name, "[aeiou]"),
+    length = str_length(name),
+    v_prop = vowels / length
+  ) |> 
+  arrange(desc(v_prop)) |> 
+  distinct(name, .keep_all = TRUE) |> 
+  select(name, vowels, v_prop)
+```
+
+
+2. Replace all forward slashes in "a/b/c/d/e" with backslashes. What happens if you attempt to undo the transformation by replacing all backslashes with forward slashes? (We'll discuss the problem soon.)
+```{r}
+x2 <- "a/b/c/d/e"
+
+str_replace(x2, "/", "\\")
+```
+
+This won't work as of now because slash is a special character. We need to use escaping keys.
+
+
+3. Implement a simple version of `str_to_lower()` using `str_replace_all()`.
+```{r}
+x3 <- "thE qUIck And brOwn fOx"
+
+x3 <- str_replace_all(x3, "[A]", "a")
+x3 <- str_replace_all(x3, "[E]", "e")
+x3 <- str_replace_all(x3, "[I]", "i")
+x3 <- str_replace_all(x3, "[O]", "o")
+x3 <- str_replace_all(x3, "[U]", "u")
+
+str_view(x3)
+```
+
+
+4. Create a regular expression that will match telephone numbers as commonly written in your country.
+```{r}
+text = "lkjsdfljfds098234kljsd+63-927-5589flkjsdf09usdflkjsdflkjsdf"
+
+pattern = "[+]63-[0123456789][0123456789][0123456789]-[0123456789][0123456789][0123456789][0123456789]"
+str_view(text, pattern)
+```
+
+
+### Pattern details
+
+### Escaping
+
+- Escaping using backslash `\`:
+```{r}
+# to match a "." we need to use "\\."
+dot <- "\\."
+str_view(dot)
+
+str_view(c("abc", "a.c"), "a\\.c")
+```
+
+- To match a literal backslash (`\`), we need to use four backslashes (`\\\\`):
+```{r}
+x <- "a\\b"
+str_view(x)
+
+str_view(x, "\\\\")
+```
+
+- Using raw strings in this case lets us avoid one layer of escaping:
+```{r}
+str_view(x, r"{\\}")
+```
+
+- To match a literal character that is also a metacharacter (`.`, `$`, etc.), it is more practical to use a character class (`[.]`, `[&]`, etc.)
+```{r}
+str_view(c("abc", "a.c", "a*c", "a c"), "a[.]c")
+
+str_view(c("abc", "a.c", "a*c", "a c"), ".[*]c")
+```
+
+
+### Anchors
+
+- Used if you want to match at the start or end of the string. Default is to match any part of the string.
+```{r}
+# match at the start of the string
+str_view(fruit, "^a")
+
+# match at the end
+str_view(fruit, "a$")
+```
+
+- To force a regex to match only the full string, anchor it with both `^` and `$`:
+```{r}
+str_view(fruit, "apple")
+str_view(fruit, "^apple$")
+```
+
+- To match the boundaries between words, `\b` is used. This works for the start or end of a word:
+```{r}
+x <- c("summary(x)", "summarize(df", "rowsum(x)", "sum(x)")
+str_view(x, "sum")
+
+str_view(x, "\\bsum\\b")
+```
+
+- When used alone, anchors will produce a zero-width match:
+```{r}
+str_view("abc", c("S", "^", "\\b"))
+```
+
+- Replacing a standalone anchor:
+```{r}
+str_replace_all("abc", c("$", "^", "\\b"), "--")
+```
+
+
+### Character class shorthand
+
+- `-` defines a range. Example: `[a-z]` and `[0-9]`.  
+- `\` escapes special characters. Example: `[\^\-\]]` matches `^`, `-`, or `]`.
+
+Example with code:
+```{r}
+x <- "abcd ABCD 12345 -!@#%."
+
+str_view(x, "[abc]+")
+str_view(x, "[a-z0-9]+")
+str_view(x, "[^a-z0-9]+")
+
+str_view("a-b-c", "[a-c]")
+str_view("a-b-c", "[a\\-c]")
+```
+
+Other shorthands:
+- `\d` matches any digit.  
+- `\D` matches anything that isn't a digit.  
+- `\s` matches any whitespace.  
+- `\S` matches anything that isn't a whitespace.  
+- `\w` matches any "word" character.  
+- `\W` matches any "non-word" character.  
+
+Examples:
+```{r}
+x <- "abcd ABCD 12345 -!@#$."
+
+str_view(x, "\\d+")
+str_view(x, "\\D+")
+str_view(x, "\\s+")
+str_view(x, "\\S+")
+str_view(x, "\\w+")
+str_view(x, "\\W+")
+```
+
+### Quantifiers
+
+- Quantifiers control how many times a pattern matches.  
+- `{n}` matches exactly n times.  
+- `{n,}` matches at least n times.    
+- `{n, m}` matches between n and m times.  
+
+
+On the order of operation:
+- Quantifiers have high precedence.  
+- Alternation has low precedence.  
+
+
+### Grouping and capturing
+
+- Capturing groups allow the user to use sub-components of the match.  
+- **back reference:**: `\1` refers to the match contained in the first parenthesis, `\2` in the second parenthesis, and so on.
+
+- Example using back reference to find all fruits that have a repeated pair of letters:
+```{r}
+str_view(fruit, "(..)\\1")
+```
+
+
+- Example using back reference to find all words that start and end with the same pair of letters:
+```{r}
+str_view(words, "^(..).*\\1$")
+```
+
+- Using back references in `str_replace()`:
+```{r}
+sentences |> 
+  str_replace("(\\w+) (\\w+) (\\w+)", "\\1 \\3 \\2") |> 
+  str_view()
+```
+
+- Extracting matches for each group:
+```{r}
+sentences |> 
+  str_match("the (\\w+) (\\w+)") |> 
+  head()
+```
+
+- Converting the above result to a tibble:
+```{r}
+sentences |> 
+  str_match("the (\\w+) (\\w+)") |> 
+  as_tibble(.name_repair = "minimal") |> 
+  set_names("match", "word1", "word2")
+```
+
+
+- Using `(?:)` to have parentheses without creating matching groups (aka non-capturing group):
+```{r}
+x <- c("a gray cat", "a grey dog")
+
+# with capturing group
+str_match(x, "gr(e|a)y")
+
+# with non-capturing group
+str_match(x, "gr(?:e|a)y")
+```
+
+### Exercises
+
+...
+
+
+## Pattern control
+
+- Used when extra control over the details of the match is needed.  
+
+### Regex flags
+
+- `ignore_case = TRUE` flag is probably the most useful because it allows characters to match both uppercase or lowercase forms.  
+```{r}
+bananas <- c("banana", "Banana", "BANANA")
+
+# no regex flag
+str_view(bananas, "banana")
+
+# with `ignore_case = TRUE` flag
+str_view(bananas, regex("banana", ignore_case = TRUE))
+```
+
+- Flags for working with multiline strings:
+- `dotall = TRUE` lets `.` match everything including `\n`.  
+```{r}
+x <- "Line 1\nLine 2\nLine 3"
+
+# no flag
+str_view(x, ".Line")
+
+# with `dotall = TRUE` flag
+str_view(x, regex(".Line", dotall = TRUE))
+```
+
+- `multiline = TRUE` makes `^` and `&` match the start and end of each line rather than those of the complete string: 
+```{r}
+x <- "Line 1\nLine 2\nLine 3"
+
+# no flag
+str_view(x, "^Line")
+
+# with `multiline = TRUE` flag
+str_view(x, regex("^Line", multiline = TRUE))
+```
+
+- `comments = TRUE` allows the use of comments and whitespace to make complex regex more understandable:
+```{r}
+phone <- regex(
+  r"(
+    \(?     # optional opening parens
+    (\d{3}) # area code
+    [)\-]?  # optional closing parens or dash
+    \ ?     # optional space
+    (\d{3}) # another three numbers
+    [\ -]?  # optional space or dash
+    (\d{4}) # four more numbers
+  )", 
+  comments = TRUE
+)
+
+str_extract(c("514-791-8141", "(123) 456 7890", "123456"), phone)
+```
+
+### Fixed matches
+
+- `fixed()` is used to opt-out of the regex rules:
+```{r}
+str_view(c("", "a", "."), fixed("."))
+```
+
+- `fixed()` can also be used to ignore cases:
+```{r}
+str_view("x X", "X")
+
+str_view("x X", fixed("X", ignore_case = TRUE))
+```
+
+- when working with non-English text, `coll()` works better than `fixed()`:
+```{r}
+str_view("i İ ı I", fixed("İ", ignore_case = TRUE))
+str_view("i İ ı I", coll("İ", ignore_case = TRUE, locale = "tr"))
+
+```
+
+
+## Practice
+
+### Check your work
+
+Exercise: Finding all sentences that start with "The":
+```{r}
+str_view(sentences, "^The")
+```
+
+- We can see that this is not good enough. Words like `These` and `They` are also matches.
+- Adding a word boundary:
+```{r}
+str_view(sentences, "^The\\b")
+```
+
+Looks OK!
+
+- Exercise: Finding all sentences that begin with a pronoun:
+```{r}
+str_view(sentences, "^She|he|It|They\\b")
+```
+
+This is not good enough. 
+
+- It is a good idea here to create a positive and negative matches and use them to test if your pattern works as expected:
+```{r}
+pos <- c("He is a boy.", "She had a good time")
+neg <- c("Shells come from the sea", "Hadley said 'It's a great day'")
+
+pattern <- "^(She|He|It|They)\\b"
+str_detect(pos, pattern)
+str_detect(neg, pattern)
+```
+
+
+### Boolean operations
+
+Example: Find words that only contain consonants 
+```{r}
+str_view(words, "^[^aeiou]+$")
+```
+
+- This works but there is an easier way -- by flipping the problem around using the "not" operator.  
+- Instead of looking for consonants, we can look for words that don't contain any vowels:
+```{r}
+str_view(words[!str_detect(words, "[aeiou]")])
+```
+
+Example: Find all words that contain "a" and "b".
+- Plan of attack: look for all words that contain an "a" followed by a "b" or a "b" followed by an "a":
+```{r}
+str_view(words, "a.*b|b.*a")
+```
+
+- This plan works but is rather difficult to come up with. There is an easier way:
+```{r}
+words[str_detect(words, "a") & str_detect(words, "b")]
+```
+
+Example: Try to see if there was a word that contains all vowels.  
+- Using the first plan of attack is not practical, since this requires 120 different patterns (5!).  
+- a better way is to use the second approach:
+```{r}
+words[
+  str_detect(words, "a") &
+  str_detect(words, "e") &
+  str_detect(words, "i") &
+  str_detect(words, "o") &
+  str_detect(words, "u")
+]
+```
+
+
+- If you get stuck trying to create a single regex pattern that solves your problem, take a step back and think if you could break the problem down into smaller pieces.
+
+### Creating a pattern with code
+
+Problem: Find all sentences that mention a color.
+```{r}
+str_view(sentences, "\\b(red|green|blue)\\b")
+```
+
+What if we have more colors? Things would get cumbersome very quickly. 
+
+- Better solution: store the colors in a vector and use `str_c` and `str_flatten()` to generate the necessary pattern.
+```{r}
+rgb <- c("red", "green", "blue")
+
+str_c("\\b(", str_flatten(rgb, "|"), ")\\b")
+```
+
+- It works, but where can we get a list of colors?  
+- There is a color list in R, but some items are numbered.
+```{r}
+str_view(colors())
+```
+
+- Eliminating the numbered colors:
+```{r}
+cols <- colors()
+cols <- cols[!str_detect(cols, "\\d")]
+str_view(cols)
+```
+
+Finally we can use this to generate the pattern:
+```{r}
+pattern <- str_c("\\b(", str_flatten(cols, "|"), ")\\b")
+str_view(sentences, pattern)
+```
+
+
+### Exercises
+
+...
+
+
+## Regex in other places
+
+### tidyverse
+
+Some useful places where regex is useful
+- `matches(pattern)` will select all available variables whose name matches the supplied pattern. Abvailable in `select()`, `rename_with()`, and `across()`.  
+- `names_pattern` argument in `pivot_longer()`. Useful for extracting data out of variable names with complex structure.  
+- `delim` argument in `separate_longer_delim()` and family of functions. 
+
+### Base R
+
+Some useful applications of regex in base R:
+- `apropos(pattern)` searches all objects available in the global environment. Useful if you can't quite remember the name of a function.  
+- `list.files(path, pattern)` lists all files in `path` that math a regex pattern.
+
+

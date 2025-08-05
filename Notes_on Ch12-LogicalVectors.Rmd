@@ -1,0 +1,452 @@
+---
+title: 'Notes on Chapter 12: Logical Vectors'
+author: "Norman Lim"
+date: "2025-07-24"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Prerequisites
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+Showing R's vectorized operation:
+```{r}
+x <- c(1, 2, 3, 5, 7, 11, 13)
+x*2
+```
+
+
+- Any manipulation we can do to a free-floating vector, we can do to a variable inside a data frame using `mutate()`:
+```{r}
+df <- tibble(x)
+df |> 
+  mutate(y = x * 2)
+```
+
+
+## Comparisons
+
+Using logical conditions:
+```{r}
+flights |> 
+  filter(dep_time > 660 & dep_time < 2000 & abs(arr_delay) < 20)
+```
+
+Instad of doing it like this, `mutate()` provides a cleaner way to filter and create a new variable:
+```{r}
+flights |> 
+  mutate(
+    daytime = dep_time > 600 & dep_time < 2000,
+    approx_ontime = abs(arr_delay) < 20,
+    .keep = "used"
+  )
+```
+
+
+- This cleaner way makes it easier to both read the code and check if each step has been computed correctly (as intended).
+
+
+Compare the code above with:
+```{r}
+flights |> 
+  mutate(
+    daytime = dep_time > 600 & dep_time < 2000,
+    approx_ontime = abs(arr_delay) < 20
+  ) |> 
+  filter(daytime & approx_ontime)
+```
+
+
+### Floating-point comparison
+
+- Beware of using `==` when comparing numbers. Example:
+```{r}
+x <- c(1/49 * 49, sqrt(2)^2)
+x
+```
+
+All seems OK until you test them for equality:
+```{r}
+x == c(1, 2)
+```
+
+
+Reason: The numbers contained in x are not exactly 1 and 2, respectively -- they are slightly off because there is no way to exactly represent `1/49` or `sqrt(2)`. We can see the exact values stored in `x` like this:
+```{r}
+print(x, digits = 16)
+```
+
+
+The `near` function can be used in this case -- it ignores small differences:
+```{r}
+near(x, c(1, 2))
+```
+
+
+### Missing values
+
+- Missing values are "contagious" -- almost any operation involving an unknown will also be unknown:
+```{r}
+NA > 5
+10 == NA
+NA == NA
+```
+
+
+- For this reason, we cannot filter for `NA`s using `== NA`.
+
+This will not work:
+```{r}
+flights |> 
+  filter(dep_time == NA)
+```
+
+- This is the reason why we have the `is.na()` tool.
+
+
+Using `is.na()`
+```{r}
+flights |> 
+  filter(is.na(dep_time))
+```
+
+Sorting the results with `arrange()`:
+```{r}
+flights |> 
+  filter(month == 1, day == 1) |> 
+  arrange(dep_time)
+```
+
+
+- By default, `arrange()` puts all the `NA`s at the end. We can override this by arranging the results in descending order after filtering:
+```{r}
+flights |> 
+  filter(month == 1, day == 1) |> 
+  arrange(desc(is.na(dep_time)), dep_time)
+```
+
+
+### Exercises
+
+1. How does `dplyr::near()` work? Type `near` to see the source code. Is `sqrt(2)^2` near 2?
+
+Ans. `near` works by checking if the difference between the two values is less than the tolerance. If yes, then it is "near".
+
+```{r}
+near(sqrt(2)^2, 2)
+```
+
+2. Use `mutate()`, `is.na()`, and `count()` together to describe how the missing values in `dep_time`, `sched_dep_time` and `dep_delay` are connected.
+```{r}
+# test
+```
+
+
+## Boolean Algebra
+
+- Don't use `&&` and `||` operators in `dplyr` functions. These are called short-circuiting operators. They are important for programming, not for data science.
+
+
+### Order of operations
+
+Instruction: "Find all flights that departed in November or December."
+
+Wrong way of executing the instruction:
+```{r}
+flights |> 
+  filter(month == 11 | 12)
+```
+
+
+Correct way of executing the instruction:
+```{r}
+flights |> 
+  filter(month == 11 | month == 12)
+```
+
+- This mistake can easily happen because of the way we say it in our everyday language.
+
+
+### `%in%`
+
+- Instead of using `filter(x == y | x == z )` format (which is error-prone), we can simply use `%in%`.  
+```{r}
+flights |> 
+  filter(month %in% c(11, 12))
+```
+
+- The `%in%` avoids the issue we had with `==` when used to check for `NA`s:
+```{r}
+# using ==
+c(1, 2, NA) == NA
+c(1, 2, NA) %in% NA
+```
+
+- The `%in%` expression can be used to filter for `NA`s:
+```{r}
+flights |> 
+  filter(dep_time %in% c(NA, 0800))
+```
+
+
+## Exercises
+
+1. Find all flights where `arr_delay` is missing but `dep_delay` is not. Find all flights where neither `arr_time` nor `sched_arr_time` are missing, but `arr_delay` is.
+
+Ans.
+```{r}
+flights |> 
+  filter(is.na(arr_delay) & !is.na(dep_delay))
+
+flights |> 
+  filter(!is.na(arr_time) & !is.na(arr_time) & is.na(arr_delay))
+```
+
+
+2. How many flights have a missing `dep_time`? What other variables are missing in these rows? What might these rows represent?
+
+Ans.
+```{r}
+flights |> 
+  filter(is.na(dep_time))
+
+n_missing_dep_time <- flights |> 
+  filter(is.na(dep_time)) |> 
+  nrow()
+```
+
+There are `r n_missing_dep_time` flights with missing `dep_time`. `dep_delay` and `arr_time` are also missing, along with missing `dep_time`.
+
+
+3. Assuming that a missing `dep_time` implies that a flight is cancelled, look at the number of cancelled flights per day. Is there a pattern? Is there a connection between the proportion of cancelled flights and the average delay of non-cancelled flights?
+
+
+## Summaries
+
+### Logical summaries
+
+- Using `all()` and `any()`:
+```{r}
+flights |> 
+  group_by(year, month, day) |> 
+  summarize(
+    all_delayed = all(dep_delay <= 60, na.rm = TRUE),
+    any_long_delay = any(arr_delay >= 300, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+
+### Numerical summaries
+```{r}
+flights |> 
+  group_by(year, month, day) |> 
+  summarize(
+    proportion_delayed = mean(dep_delay <= 60, na.rm = TRUE),
+    count_long_delay = sum(arr_delay >= 300, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+
+### Logical subsetting
+
+Condition: find the average delay just for the flights that were actually delayed.
+
+Plan of attack: first, filter for the delayed flights. Then, calculate the average delay.
+```{r}
+flights |> 
+  filter(arr_delay > 0) |> 
+  group_by(year, month, day) |> 
+  summarize(
+    behind = mean(arr_delay),
+    n = n(),
+    .groups = "drop"
+  )
+```
+
+Condition: In addition to the conditions above, also compute for the average delay for flights that arrived early.
+
+Plan of attack: similar to the plan above, but perform a separate filter step. Then figure out how to combine the two dataframes altogether.
+
+Better plan of attack: Perform an inline filter: `arr_delay[arr_delay > 0]` to get only the positive arrival delays. This is similar to how boolean filtering is usually performed in Python.
+```{r}
+flights |> 
+  group_by(year, month, day) |> 
+  summarize(
+    behind = mean(arr_delay[arr_delay > 0], na.rm = TRUE),
+    ahead = mean(arr_delay[arr_delay < 0], na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+```
+
+
+## Exercises
+1. What will `sum(is.na(x))` tell you? How about `mean(is.na(x))`
+2. What does `prod()` return when applied to a logical vector? What logical summary function is it equivalent to? What does `min()` return when returned to a logical vector? What logical summary is it equivalent to?
+
+Ans.
+```{r}
+TT_vector <- c(TRUE, TRUE)
+TF_vector <- c(TRUE, FALSE)
+TFT_vector <- c(TRUE, FALSE, TRUE)
+FTF_vector <- c(FALSE, TRUE, FALSE)
+
+prod(TT_vector)
+prod(TF_vector)
+prod(TFT_vector)
+prod(FTF_vector)
+
+min(TT_vector)
+min(TF_vector)
+min(TFT_vector)
+min(FTF_vector)
+
+sum(all(TT_vector))
+sum(all(TF_vector))
+sum(all(TFT_vector))
+sum(all(FTF_vector))
+```
+
+When applied to logical vectors, they act like `sum(all())`
+
+
+### Conditional transformations
+
+Example using `if_else()`
+```{r}
+x <- c(-3:3, NA)
+
+if_else(x > 0, "+ve", "-ve")
+```
+
+The syntax is similar to the IF formula in Excel, but there is an optional argument specifies what to return instead of NA:
+```{r}
+if_else(x > 0, "+ve", "-ve", "???")
+```
+
+
+A simple version of the `coalesce()` function using `if_else()`
+```{r}
+x1 <- c(NA, 1, 2, NA)
+y1 <- c(3, NA, 4, 6)
+
+ifelse(is.na(x1), y1, x1)
+```
+
+
+- Just like in Excel, the `if_else()` function can be hard to read (and hard to code) when the conditions get complicated:
+```{r}
+if_else(x == 0, "0", if_else(x < 0, "+-ve", "+ve"), "???")
+```
+
+- For complicated conditions, it is better to use `case_when()` instead of `if_else()`:
+```{r}
+x <- c(-3:3, NA)
+
+case_when(
+  x == 0 ~ "0",
+  x < 0 ~ "-ve",
+  x > 0 ~ "+ve",
+  is.na(x) ~ "???"
+)
+```
+
+The code is longer but it more readable and easier to code.
+
+- With `case_when()`, it is also possible to create a default/catch-all value to return:
+```{r}
+case_when(
+  x < 0 ~ "-ve",
+  x > 0 ~ "+ve",
+  .default = "???"
+)
+```
+
+Just like `vlookup` in Excel, if multiple conditions match, only the first case will be used:
+```{r}
+case_when(
+  x > 0 ~ "+ve",
+  x > 2 ~ "big"
+)
+```
+
+- With `case_when()`, other logical conditions can be used:
+```{r}
+flights |> 
+  mutate(
+    status = case_when(
+      is.na(arr_delay)     ~ "cancelled",
+      arr_delay < -30      ~ "very early",
+      arr_delay < -15      ~ "early",
+      abs(arr_delay) <= 15 ~ "on time",
+      arr_delay < 60       ~ "late",
+      arr_delay < Inf      ~ "very late"
+    ),
+    .keep = "used"
+  )
+```
+
+
+## Exercises
+1. A number is even if it's divisible by two, which in R you can find out with x %% 2 == 0. Use this fact and `if_else()` to determine whether each number between 0 and 20 is even or odd.
+
+Ans.
+```{r}
+x <- c(0:20)
+
+if_else(x %% 2 == 0, "even", "odd")
+```
+
+2. Given a vector of days like `x <- c("Monday", "Saturday", "Wednesday"), use an `if_else()` statement to label them as weekends or weekdays.
+```{r}
+x <- c("Monday", "Saturday", "Wednesday", "March")
+weekends <- c("Saturday", "Sunday")
+days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
+cond1 <- x %in% days
+cond2 <- x %in% weekends
+if_else(cond1, if_else(cond2, "weekends", "weekdays"), "???")
+```
+
+3. Use `if_else()` to compute the absolute value of a numeric vector called `x`.
+
+Ans.
+```{r}
+x <- c(-3:3, NA)
+if_else(x >= 0, x, -x)
+```
+
+4. Write a `case_when()` statement that uses the `month` and `day` columns from `flights` to label a selection of important US holidays (e.g., New Years Day, 4th of July, Thanksgiving, and Christmas). First create a logical column that is either `TRUE` or `FALSE`, and then create a character column that either gives the name of the holiday or is `NA`.
+
+```{r}
+flights |> 
+  mutate(
+    is_holiday = case_when(
+      (day == 1 & month == 1) ~ TRUE,
+      (day == 4 & month == 7) ~ TRUE,
+      (day == 25 & month == 25) ~ TRUE,
+      TRUE ~ NA
+    ),
+    holiday_type = case_when(
+      (day == 1 & month == 1) ~ "New Years Day",
+      (day == 4 & month == 7) ~ "Independence Day",
+      (day == 25 & month == 12) ~ "Christmas Day"
+    ),
+    .keep = "used"
+  )
+```
+
+
+
+
+
+
+
+
+

@@ -18,14 +18,14 @@ Visualize
 - [x] 11. Communication
 
 Transform
-- [ ] 12. Logical Vectors
-- [ ] 13. Numbers
-- [ ] 14. Strings
-- [ ] 15. Regular Expressions
-- [ ] 16. Factors
-- [ ] 17. Dates and Times
-- [ ] 18. Missing Values
-- [ ] 19. Joins
+- [x] 12. Logical Vectors
+- [x] 13. Numbers
+- [x] 14. Strings
+- [x] 15. Regular Expressions
+- [x] 16. Factors
+- [x] 17. Dates and Times
+- [x] 18. Missing Values
+- [x] 19. Joins
 
 Import
 - [ ] 20. Spreadsheets
@@ -40,4 +40,4 @@ Program
 - [ ] 27. A Field Guide to Base R
 
 Communicate
-- [ ] Quarto
+- [ ] 28. Quarto
