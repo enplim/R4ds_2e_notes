@@ -28,7 +28,7 @@ Transform
 - [x] 19. Joins
 
 Import
-- [ ] 20. Spreadsheets
+- [x] 20. Spreadsheets
 - [ ] 21. Databases
 - [ ] 22. Arrow
 - [ ] 23. Hierarchical Data

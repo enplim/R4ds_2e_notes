@@ -1,0 +1,223 @@
+---
+title: "Notes on Chapter 20 - Spreadsheets"
+author: "The Caveman Coder"
+date: "2025-08-12"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Prerequisites
+```{r}
+library(readxl)
+library(tidyverse)
+library(writexl)
+```
+
+Reading Excel spreadsheets using the **readxl** package:  
+- `read_xls()` reads Excel files with `xls` format.  
+- `read_xlsx()` reads Excel files with `xlsx` format.  
+- `read_excel()` reads both `xls` and `xlsx` formats. It infers the type based on the input.  
+Examples:
+```{r}
+students <- read_excel("data/students.xlsx")
+students
+```
+
+
+Reading an Excel file while supplying column names at the same time:
+```{r}
+read_excel(
+  "data/students.xlsx",
+  col_names = c("student_id", "full_name", "favorite_food", "meal_plan", "age")
+)
+```
+
+Reading an Excel file while supplying column names at the same time, and skipping the original header:
+```{r}
+read_excel(
+  "data/students.xlsx",
+  col_names = c("student_id", "full_name", "favorite_food", "meal_plan", "age"),
+  skip = 1
+)
+```
+
+
+Reading an Excel file while supplying column names at the same time, skipping the original header, and specifying the values for `NA`:
+```{r}
+read_excel(
+  "data/students.xlsx",
+  col_names = c("student_id", "full_name", "favorite_food", "meal_plan", "age"),
+  skip = 1,
+  na = c("", "N/A")
+)
+```
+
+Reading an Excel file while supplying column names at the same time, skipping the original header, and specifying the values for `NA`, and supplying the correct column types:
+```{r}
+students <- read_excel(
+  "data/students.xlsx",
+  col_names = c("student_id", "full_name", "favorite_food", "meal_plan", "age"),
+  skip = 1,
+  na = c("", "N/A"),
+  col_types = c("numeric", "text", "text", "text", "text")
+)
+
+students <- students |> 
+  mutate(
+    age = if_else(age == "five", "5", age),
+    age = parse_number(age)
+  )
+
+students
+```
+
+Note: we first read the `age` column as text, then corrected the issue, and then parsed it as numeric.
+
+
+### Reading worksheets
+
+Specifying which "tab" to open using the `sheet` argument:
+```{r}
+read_excel("data/penguins.xlsx", sheet = "Torgersen Island")
+```
+
+Repeting the operation above, with the `NA`s specified:
+```{r}
+penguins_torgersen <- read_excel(
+  "data/penguins.xlsx", 
+  sheet = "Torgersen Island",
+  na = "NA"
+)
+
+penguins_torgersen
+```
+
+What if you don't know the worsheet names (aka the tab name)? Use `excel_sheets()`.
+```{r}
+excel_sheets("data/penguins.xlsx")
+```
+
+Reading the remaining worksheets:
+```{r}
+penguins_biscoe <- read_excel(
+  "data/penguins.xlsx", 
+  sheet = "Biscoe Island",
+  na = "NA"
+)
+penguins_dream <- read_excel(
+  "data/penguins.xlsx",
+  sheet = "Dream Island", 
+  na = "NA"
+)
+```
+
+Checking the dimensions of each dataset extracted from the Excel worksheet:
+```{r}
+dim(penguins_torgersen)
+dim(penguins_biscoe)
+dim(penguins_dream)
+```
+
+Combining the files using `bind_rows()`:
+```{r}
+penguins <- bind_rows(
+  penguins_torgersen,
+  penguins_biscoe,
+  penguins_dream
+)
+
+penguins
+```
+
+
+### Reading part of a sheet
+
+Using `readxl_example()` to locate the spreadsheet in the directory:
+`deaths_path <- readxl_example("death.xlsx")`
+
+Reading excel while specifying the data range:
+`read_excel(deaths_path, range = "A5:F15")`
+
+
+### Writing to excel
+
+Using `write_xlsx()`:
+```{r}
+bake_sale <- tibble(
+  item = factor(c("brownie", "cupcake", "cookie")),
+  quantity = c(10, 5, 8)
+)
+
+bake_sale
+
+write_xlsx(bake_sale, path = "data/bake-sale.xlsx")
+```
+
+To create an Excel spreadsheet with more sophisticated formatting, we can use the **openxlsx** package. This package, however, is not part of tidyverse.
+
+
+## Reading Google Sheets
+
+### Prerequisites
+```{r}
+library(googlesheets4)
+library(tidyverse)
+```
+
+We can use either the URL or the google sheet ID: `gs4_deauth()`
+
+```{r}
+gs4_deauth()
+students_sheet_id <- "1V1nPp1tzOuutXFLb3G9Eyxi3qxeEhnOXUzL5_BcCQ0w"
+
+students <- read_sheet(students_sheet_id)
+students
+```
+
+Specifying the column names, `NA` stings, and column types while reading the spreadsheet:
+```{r}
+students <- read_sheet(
+  students_sheet_id,
+  col_names = c("student_id", "full_name", "favorite_food", "meal_plan", "age"),
+  skip = 1,
+  na = c("", "N/A"),
+  col_types = "dcccc"
+)
+
+students
+```
+
+Example using the penguin dataset:
+```{r}
+penguins_sheet_id <- "1aFu8lnD_g0yjF5O-K6SFgSEWiHPpgvFCF0NY9D6LXnY"
+read_sheet(penguins_sheet_id, sheet = "Torgersen Island")
+```
+
+Worksheet names can be listed using `sheet_names()`:
+```{r}
+sheet_names(penguins_sheet_id)
+```
+
+
+### Writing to Google Sheets
+
+Basic command:
+```r
+write_sheet(bake_sale, ss = "bake-sale")
+```
+
+Writing data to a specific worksheet inside a Google sheet:
+```r
+write_sheet(bake_sale, ss = "bake-sale", sheet = "Sales")
+```
+
+Reading from a public Google sheet without authentication with your Google account: `gs4_deauth()`
+
+When you attempt to read in a sheet that requires authentication, googlesheets4 will direct you to a web browser with a prompt to sign in.  
+
+To use an authentication token instead, the command is:
+`gs4_auth(email = "xyz@google.com")`
+
+
+
