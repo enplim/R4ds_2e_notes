@@ -29,7 +29,7 @@ Transform
 
 Import
 - [x] 20. Spreadsheets
-- [ ] 21. Databases
+- [x] 21. Databases
 - [ ] 22. Arrow
 - [ ] 23. Hierarchical Data
 - [ ] 24. Web Scraping

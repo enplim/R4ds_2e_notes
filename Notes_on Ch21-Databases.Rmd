@@ -1,0 +1,362 @@
+---
+title: "Notes on Chapter 21 - Databases"
+author: "The Caveman Coder"
+date: "2025-08-13"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Prerequisites
+```{r}
+library(DBI)
+library(dbplyr)
+library(tidyverse)
+```
+
+Connecting to duckdb:
+```{r}
+con <- DBI::dbConnect(duckdb::duckdb())
+```
+
+
+### Loading data
+```{r}
+dbWriteTable(con, "mpg", ggplot2::mpg)
+dbWriteTable(con, "diamonds", ggplot2::diamonds)
+```
+
+### DBI basics
+
+Listing all tables in the database using `dbListTables()`:
+```{r}
+dbListTables(con)
+```
+
+Reading tables using `dbReadTable()`:
+```{r}
+con |> 
+  dbReadTable("diamonds") |> 
+  as_tibble()
+```
+
+
+Running SQL queries on the table using `dbGetQuery()`:
+```{r}
+sql <- "
+  SELECT carat, cut, clarity, color, price
+  FROM diamonds
+  WHERE price > 15000
+"
+
+as_tibble(dbGetQuery(con, sql))
+```
+
+
+## dbplyr basics
+
+Using `tbl()` to create a database object:
+```{r}
+diamonds_db <- tbl(con, "diamonds")
+diamonds_db
+```
+
+The database object created uses *lazy evaluation*; it only performs the operation when needed.
+
+For example,
+```{r}
+big_diamonds_db <- diamonds_db |> 
+  filter(price > 15000) |> 
+  select(carat:clarity, price)
+
+big_diamonds_db
+```
+
+
+It doesn't know the number of rows! Why? Because knowing the total number of rows requires executing the complete query first.
+
+
+Using the `show_query()` function to see the SQL code used to create the db object:
+```{r}
+big_diamonds_db |> 
+  show_query()
+```
+
+Using `collect()` to get all the data back from a db object created using SQL query:
+```{r}
+big_diamonds <- big_diamonds_db |> 
+  collect()
+
+big_diamonds
+```
+
+
+## SQL
+
+In this section, we will learn about the relationship between dplyr commands and SQL queries.
+
+Copying the required data (using the built-in `copy_nycflights13()`) to our database:
+```{r}
+dbplyr::copy_nycflights13(con)
+
+flights <- tbl(con, "flights")
+planes <- tbl(con, "planes")
+```
+
+### SQL basics
+```{r}
+flights |> show_query()
+planes |>  show_query()
+```
+
+Using `WHERE` and `ORDER BY` to control which rows are included and how they are ordered:
+```{r}
+flights |> 
+  filter(dest == "IAH") |> 
+  arrange(dep_delay) |> 
+  show_query()
+```
+
+Showing how `GROUP BY` converts the query to a summary, causing aggregation to happen:
+```{r}
+flights |> 
+  group_by(dest) |> 
+  summarize(dep_delay = mean(dep_delay, na.rm = TRUE)) |> 
+  show_query()
+```
+
+Important distinction between dplyr verbs and SELECT clauses:  
+- SQL is not case-sensitive. It is only by convention that we write queries in upper-case.  
+- Order matters in SQL. The proper order is: `SELECT`, `FROM`, `WHERE`, `GROUP BY`, `ORDER BY`.  
+- SQL evaluates the clauses in this order: `FROM`, `WHERE`, `GROUP BY`, `SELECT`, and `ORDER BY`.
+
+### `SELECT`
+
+- Performs the same job as `select()`, `mutate()`, `rename()`, `relaocate()`, and `summarize()`.
+
+```{r}
+planes |> 
+  select(tailnum, type, manufacturer, model, year) |> 
+  show_query()
+
+planes |> 
+  select(tailnum, type, manufacturer, model, year) |> 
+  rename(year_built = year) |> 
+  show_query()
+
+planes |> 
+  select(tailnum, type, manufacturer, model, year) |> 
+  relocate(manufacturer, .before = type) |> 
+  show_query()
+```
+
+In the query generated, "year" and "type" are wrapped in double quotes because these are **reserved words** in duckdb. Wrapping them in `"` avoids any potential confusion between column/table names and SQL operators.  
+
+To be safe, we can wrap every column names in `"`. Other database systems use backticks instead of quotation marks.
+
+- Example of `mutate()` translated into `SELECT` in SQL:
+```{r}
+flights |> 
+  mutate(
+    speed = distance / (air_time / 60)
+  ) |> 
+  show_query()
+```
+
+### `FROM`
+
+This is more useful when we are joining tables.
+
+### `GROUP BY`
+
+The **dplyr** `group_by()` is translated to `GROUP BY` and `summarize()` is translated to `SELECT`:
+```{r}
+diamonds_db |> 
+  group_by(cut) |> 
+  summarize(
+    n = n(),
+    avg_price = mean(price, na.rm = TRUE)
+  ) |> 
+  show_query()
+```
+
+
+### `WHERE`
+
+The **dplyr** function `filter()` is translated to `WHERE`:
+```{r}
+flights |> 
+  filter(dest == "IAH" | dest == "HOU") |> 
+  show_query()
+
+flights |> 
+  filter(arr_delay > 0 & arr_delay < 20) |> 
+  show_query()
+```
+
+Notable differences:  
+- the OR pipe `|` becomes `OR`.  
+- the `&` symbol becomes `AND`.  
+- comparison is performed using `=` instead of `==`.  
+- for literal strings, single quotes (`''`) are used instead of double quotes (`"`) because double quotes are used to avoid conflicts with reserved words.  
+- SQL uses `NULL` instead of `NA`.  
+- the `%in%` operator somewhat becomes `IN` in SQL
+
+Examples:
+```{r}
+flights |> 
+  filter(!is.na(dep_delay)) |> 
+  show_query()
+
+flights |> 
+  filter(dest %in% c("IAH", "HOU")) |> 
+  show_query()
+```
+
+While the expression `WHERE (NOT((dep_delay IS NULL)))` works, it is not very "human-readable" -- a better way to express this is:
+`WHERE "dep_delay" IS NOT NULL`.
+
+In **dplyr**, we can use `filter()` after `summarize()`. This is translated to SQL queries by means of a `HAVING` clause:
+```{r}
+diamonds_db |> 
+  group_by(cut) |> 
+  summarize(n = n()) |> 
+  filter(n > 100) |> 
+  show_query()
+```
+
+
+### `ORDER BY`
+
+Ordering rows is handled by `ORDER BY` in SQL:
+```{r}
+flights |> 
+  arrange(year, month, day, desc(dep_delay)) |> 
+  show_query()
+```
+
+The `desc()` funtion in **dplyr** is directly inspired by SQL's `DESC`.
+
+
+### `Subqueries`
+
+In SQL, a subquery is simply a query used as a data source in the `FROM` clause instead of the usual table.
+```{r}
+flights |> 
+  mutate(
+    year1 = year + 1,
+    year2 = year1 + 1
+  ) |> 
+  show_query()
+
+flights |> 
+  mutate(year1 = year + 1) |> 
+  filter(year1 == 2014) |> 
+  show_query()
+```
+
+Note: sometimes, the translation to SQL is not yet optimized and plyr will create a subquery when it's not needed.
+
+
+### `JOIN`
+
+Joins in **dplyr** and SQL are similar:
+```{r}
+flights |> 
+  left_join(planes |> rename(year_built = year), join_by(tailnum)) |> 
+  show_query()
+```
+
+
+### Other verbs
+
+To see the full set of what's available in dbplyr, go to https://dbplyr.tidiverse.org/reference/.
+
+
+## Function translations
+
+To help understand how column-wise functions get translated into SQL queries, the following helper functions are helpful:
+
+```{r}
+summarize_query <- function(df, ...) {
+  df |> 
+    summarize(...) |> 
+    show_query()
+}
+
+mutate_query <- function(df, ...) {
+  df |> 
+    mutate(..., .keep = "none") |> 
+    show_query()
+}
+```
+
+Using the helper functions above to understand how complex operations in dplyr can be done using SQL queries:
+```{r}
+flights |> 
+  group_by(year, month, day) |> 
+  summarize_query(
+    mean = mean(arr_delay, na.rm = TRUE),
+    median = median(arr_delay, na.rm = TRUE)
+  )
+```
+
+Here is another example using the function`OVER` in the translation:
+```{r}
+flights |> 
+  group_by(year, month, day) |> 
+  mutate_query(
+    mean = mean(arr_delay, na.rm = TRUE)
+  )
+```
+
+It is done this way in SQL because the `GROUP BY` clause in SQL is used exclusively for summaries --- the task of grouping is handed over to `OVER`.
+
+The `OVER` clause can also "look" forward or backwards using `LEAD` and `LAG` clauses:
+```{r}
+flights |> 
+  group_by(dest) |> 
+  arrange(time_hour) |> 
+  mutate_query(
+    lead = lead(arr_delay),
+    lag = lag(arr_delay)
+  )
+```
+
+Since SQL tables are designed to handle large sets of data, the tables have no intrinsic order. In the **dplyr** code above, if the `arrange()` verb is not used, one might get different results each time the code is run.
+
+
+The **dplyr** expressions `if_else()` and `case_when()` are translated to `CASE WHEN` in SQL:
+```{r}
+flights |> 
+  mutate_query(
+    description = if_else(arr_delay > 0, "delayed", "on-time")
+  )
+
+flights |> 
+  mutate_query(
+    description = case_when(
+      arr_delay < -5 ~ "early",
+      arr_delay < 5 ~ "on-time",
+      arr_delay >= 5 ~ "late"
+    )
+  )
+```
+
+Other functions in R that don't have a direct translation to SQL can also be handled by `CASE WHEN`:
+```{r}
+flights |> 
+  mutate_query(
+    description = cut(
+      arr_delay,
+      breaks = c(-Inf, -5, 5, Inf),
+      labels = c("early", "on-time", "late")
+    )
+  )
+```
+
+
+While **dbplyr** translations are not (yet) perfect, they work well especially on commonly-used functions.
+
+
+
