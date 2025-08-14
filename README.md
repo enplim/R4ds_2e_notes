@@ -31,7 +31,7 @@ Import
 - [x] 20. Spreadsheets
 - [x] 21. Databases
 - [x] 22. Arrow
-- [ ] 23. Hierarchical Data
+- [x] 23. Hierarchical Data
 - [ ] 24. Web Scraping
 
 Program
