@@ -1,0 +1,336 @@
+---
+title: "Notes on Ch24-Web Scraping"
+author: "Norman Lim"
+date: "2025-08-15"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Main Idea: Introduce the basics of web scraping using **rvest**.
+
+### Prerequisites
+```{r}
+library(tidyverse)
+library(rvest)
+```
+
+## Scraping ethics and legalities
+
+General principles:  
+
+- Legalities depend a lot on where you live.  
+- If data is public, factual, and non-personal, it is likely ok.  
+- If data is not public, non-personal, or not factual, talk to a lawyer first.  
+- If scraping many pages, make sure to wait a little more between each request.  
+- If available, check the terms and service of the website.  
+- Be careful when scraping personally identifiable information like names, email addresses, phone numbers, dates of birth, etc.  
+- Look at copyright laws and see what's protected. They generally apply to original works of authorship, but scraping "facts" are usually excluded, but this may vary depending on location/country.  
+- One may scrape data under the doctrine of fair use, but there is no hard and fast rule about fair use.  
+
+
+## HTML basics
+
+HTML has a hierarchical structure formed by **elements** which consist of tags and optional **attributes**, contents, and end tags.  
+
+A good reference on html tags is the MDN Web Docs created by the team behind mozilla(?).
+
+
+## Extracting data
+
+Reading an HTML file using `read_html()`:
+```{r}
+html <- read_html("http://rvest.org/")
+html
+```
+
+
+Writing a simple html page using `minimal_html()`:
+```{r}
+html <- minimal_html("
+  <p>This is a paragraph</p>
+  <ul>
+    <li>This is a bulleted list</li>
+  <>
+")
+html
+```
+
+
+### Find elements
+
+CSS selector codes:  
+- `p` selects all `<p>` elements.  
+- `.title` selects all elements with class "title".  
+- `#title` selects all elements with the `id` attribute that equals "title". `Id` attributes must be unique within a document, so this will only ever select a single element.  
+
+Example: 
+```{r}
+html <- minimal_html("
+  <h1>This is a heading</h1>
+  <p id='first'>This is a parfagraph</p>
+  <p class='important'>This is an important paragraph</p>
+")
+```
+
+Using `html_elements()` to find all elements that match the selector:
+```{r}
+html |> html_elements("p")
+html |> html_elements(".important")
+html |> html_elements("#first")
+```
+
+The other function `html_element()` always returns the same number of outputs as inputs: 
+```{r}
+html |> html_element("p")
+```
+
+When you use a selector that doesn't match any elements, `html_elements()` returns a vector of length 0, while `html_element()` returns a missing value:
+```{r}
+html |> html_elements("b")
+html |> html_element("b")
+```
+
+
+### Nesting selections
+
+Typically, `html_elements()` is used to
+identify elements that will become observations, and `html_element()` is used to find elements that will become variables. 
+Example:
+
+Creating the sample html document: 
+```{r}
+html <- minimal_html("
+  <ul>
+    <li><b>C-3PO</b> is a <i>droid</i> that weighs <span class='weight'>167 kg</span></li>
+    <li><b>R4-P17</b> is a <i>droid</i></li>
+    <li><b>R2-D2</b> is a <i>droid</i> that weighs <span class='weight'>96 kg</span></li>
+    <li><b>Yoda</b> weighs <span class='weight'>66 kg</span></li>
+  </ul>
+  ")
+```
+
+Using `html_elements()` to make a vector where each element corresponds to a different character:  
+```{r}
+characters <- html |>  html_elements("li")
+characters
+```
+
+Extracting the name of each character using `html_element()`: 
+```{r}
+characters |> html_element("b")
+```
+
+Getting the weigh value for each element: 
+```{r}
+characters |> html_element(".weight")
+```
+
+We got an `NA` since there are only three weight elements that are children `characters`. Using `html_elements()`: 
+```{r}
+characters |> html_elements(".weight")
+```
+
+
+### Text and attributes 
+
+Extracting plain text contents of an html element using `html_text2()`: 
+```{r}
+characters |> 
+  html_element("b") |> 
+  html_text2()
+
+characters |> 
+  html_element(".weight") |> 
+  html_text2()
+```
+
+The **rvest** package automatically handles escape characters. 
+
+Extracting data from attributes using `html_attr()`:
+```{r}
+html <- minimal_html("
+  <p><a href='https://en.wikipedia.org/wiki/Cat'>cats</a></p>
+  <p><a href='https://en.wikipedia.org/wiki/Dog'>dogs</a></p>
+")
+
+html |> 
+  html_elements("p") |> 
+  html_elements("a") |> 
+  html_attr("href")
+```
+
+
+
+### Tables
+
+HTML tables are built up from four main elements:  
+- `<table>`: the table itself.  
+- `<tr>`: table row.  
+- `<th>`: table heading.  
+- `<td>`: table data.  
+
+Sample html with table: 
+```{r}
+html <- minimal_html("
+  <table class='mytable'>
+  <tr><th>x</th>   <th>y</th></tr>
+  <tr><td>1.5</td> <td>2.7</td></tr>
+  <tr><td>4.9</td> <td>1.3</td></tr>
+  <tr><td>7.2</td> <td>8.1</td></tr>
+  </table>
+")
+```
+
+Extracting table data using `html_table()`:
+```{r}
+html |> 
+  html_element(".mytable") |> 
+  html_table()
+```
+
+The values are automatically converted to numbers.
+
+
+## Finding the right selectors
+
+- Often, some experimenting is needed to find a selector that is both specific (doesn't select everything you don't care about) and sensitive (does select everything you care about).  
+- the tool SelectorGadget is useful here.  
+- The web toolkit for developers provided by Chrome is one of the best.  
+- The CSS dinner tutorial on CSS selectors is highly recommended.  
+
+
+## Putting it all together 
+
+
+### StarWars
+
+Structure of the target web page:  
+```html
+<section>
+  <h2 data-id="1">The Phantom Menace</h2>
+  <p>Released: 1999-05-19</p>
+  <p>Director: <span class="director">George Lucas</span></p>
+  
+  <div class="crawl">
+    <p>...</p>
+    <p>...</p>
+    <p>...</p>
+  </div>
+</section>
+```
+
+Goal: turn the data on the web page into a 7-row data frame with variables `title`, `year`, `director`, and `intro`. 
+
+Reading the HTML and extracting all the `<section>` elements: 
+```{r}
+url <- "https://rvest.tidyverse.org/articles/starwars.html"
+html <- read_html(url)
+
+section <- html |> html_elements("section")
+section
+```
+
+
+The code above retrieves seven elements matching the seven movies found on the web page, suggesting that using `section` as a selector is good.  
+
+Extracting the individual elements:  
+```{r}
+section |> html_element("h2") |> html_text2()
+
+section |> html_element(".director") |> html_text2()
+```
+
+Once we are sure that the results are what we want, we can wrap them up into a tibble: 
+```{r}
+tibble(
+  title = section |> 
+    html_element("h2") |> 
+    html_text2(),
+  released = section |> 
+    html_element("p") |> 
+    html_text2() |> 
+    str_remove("Released: ") |> 
+    parse_date(),
+  director = section |> 
+    html_element(".director") |> 
+    html_text2(),
+  intro = section |> 
+    html_element(".crawl") |> 
+    html_text2()
+)
+```
+
+
+### IMDB top films 
+
+Using `html_table()` to read the IMDB web page: 
+```{r}
+url <- "https://web.archive.org/web/20220201012049/https://www.imdb.com/chart/top/"
+
+html <- read_html(url)
+
+table <- html |> 
+  html_element("table") |> 
+  html_table()
+table
+```
+
+Processung further: 
+```{r}
+ratings <- table |> 
+  select(
+    rank_title_year = `Rank & Title`,
+    rating = `IMDb Rating`
+  ) |> 
+  mutate(
+    rank_title_year = str_replace_all(rank_title_year, "\n +", " ")
+  ) |> 
+  separate_wider_regex(
+    rank_title_year,
+    patterns = c(
+      rank = "\\d+", "\\. ",
+      title = ".+", " +\\(",
+      year = "\\d+", "\\)"
+    )
+  )
+ratings
+```
+
+
+"Spelunking" the source web page for additional info:  
+```{r}
+html |> 
+  html_elements("td strong") |> 
+  head() |> 
+  html_attr("title")
+```
+
+Combining this result with the previous result:  
+```{r}
+ratings |> 
+  mutate(
+    rating_n = html |> html_elements("td strong") |> html_attr("title")
+  ) |> 
+  separate_wider_regex(
+    rating_n,
+    patterns = c(
+      "[0-9.]+ based on ",
+      number = "[0-9,]+",
+      " user ratings"
+    )
+  ) |> 
+  mutate(
+    number = parse_number(number)
+  )
+```
+
+
+## Dynamic sites
+
+At the time of writing, this area is still being worked on. The **chromote** package is used to give the user additional tools to interact with the target website.
+
+
+
+
+

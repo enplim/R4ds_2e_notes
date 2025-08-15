@@ -32,7 +32,7 @@ Import
 - [x] 21. Databases
 - [x] 22. Arrow
 - [x] 23. Hierarchical Data
-- [ ] 24. Web Scraping
+- [x] 24. Web Scraping
 
 Program
 - [ ] 25. Functions
