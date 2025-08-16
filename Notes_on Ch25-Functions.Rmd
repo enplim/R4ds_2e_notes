@@ -1,0 +1,511 @@
+---
+title: "Notes on Chapter 25 - Functions"
+author: "Norman Lim"
+date: "2025-08-15"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+### Prerequisites
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+
+## Vector functions
+
+Vector functions are functions that take one or more vectors and return a vector result.  
+
+Example:  
+```{r}
+df <- tibble(
+  a = rnorm(5),
+  b = rnorm(5),
+  c = rnorm(5),
+  d = rnorm(5),
+)
+
+df |> mutate(
+  a = (a - min(a, na.rm = TRUE)) / (max(a, na.rm = TRUE) - min(a, na.rm = TRUE)),
+  b = (b - min(a, na.rm = TRUE)) / (max(b, na.rm = TRUE) - min(b, na.rm = TRUE)),
+  c = (c - min(c, na.rm = TRUE)) / (max(c, na.rm = TRUE) - min(c, na.rm = TRUE)),
+  d = (d - min(d, na.rm = TRUE)) / (max(d, na.rm = TRUE) - min(d, na.rm = TRUE))
+)
+```
+
+
+There is a mistake in `b`. This could have been avoided if we used functions. 
+
+Three things needed to make a function:  
+- A **name**.  
+- The **arguments**.  
+- The **body**.  
+
+Format:  
+```r
+name <- function(x) {
+  body
+}
+```
+
+Creating the function for the rescaling code above:
+```{r}
+rescale01 <- function(x) {
+  (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}
+```
+
+
+Testing if the function works as intended:
+```{r}
+rescale01(c(-10, 0, 10))
+rescale01(c(1, 2, 3, NA, 5))
+```
+
+Using the function (or calling the function):
+```{r}
+df |> mutate(
+  a = rescale01(a),
+  b = rescale01(b),
+  c = rescale01(c),
+  d = rescale01(d)
+)
+```
+
+
+### Improving the function
+
+Replacing the repetitious parts of the function:
+```{r}
+rescale01 <- function(x) {
+  rng <- range(x, na.rm = TRUE)
+  (x - rng[1]) / (rng[2] - rng[1])
+}
+```
+
+Retesting:
+```{r}
+x <- c(1:10,Inf)
+rescale01(x)
+```
+
+The result is not particularly useful. It is better to ignore infinite values:
+```{r}
+rescale01 <- function(x) {
+  rng <- range(x, na.rm = TRUE, finite = TRUE)
+  (x - rng[1]) / (rng[2] - rng[1])
+}
+```
+
+Retesting:
+```{r}
+rescale01(x)
+```
+
+
+### Mutate functions
+
+A simple variation of `rescale01`:
+```{r}
+z_score <- function(x) {
+  (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
+}
+```
+
+Another variation using `case_when()`:
+```{r}
+clamp <- function(x, min, max) {
+  case_when(
+    x < min ~ min,
+    x > max ~ max,
+    .default = x
+  )
+}
+
+clamp(1:10, min = 3, max = 7)
+```
+
+
+A function that makes the first character upper case:
+```{r}
+first_upper <- function(x) {
+  str_sub(x, 1, 1) <- str_to_upper(str_sub(x, 1, 1))
+  x
+}
+
+first_upper("hello")
+```
+
+A function for stripping percent signs:
+```{r}
+# https://twitter.com/NVlabormarket/status/1571939851922198530
+clean_number <- function(x) {
+  is_pct <- str_detect(x, "%")
+  num <- x |> 
+    str_remove_all("%") |> 
+    str_remove_all(",") |> 
+    str_remove_all(fixed("$")) |> 
+    as.numeric()
+  if_else(is_pct, num / 100, num)
+}
+
+clean_number("$12,300")
+clean_number("45%")
+```
+
+A function for replacing 997, 998, or 999 with `NA`:
+```{r}
+fix_na <- function(x) {
+  if_else(x %in% c(997, 998, 999), NA, x)
+}
+```
+
+
+### Summary functions
+
+These are functions that return a single value for use in `summarize()`.
+
+Example:
+```{r}
+commas <- function(x) {
+  str_flatten(x, collapse = ", ", last = " and ")
+}
+
+commas(c("cat", "dog", "pigeon"))
+```
+
+Another example with mathematical computation -- coefficient of variation:
+```{r}
+cv <- function(x, na.rm = FALSE) {
+  sd(x, na.rm = na.rm) / mean(x, na.rm = na.rm)
+}
+
+cv(runif(100, min = 0, max = 50))
+cv(runif(100, min = 0, max = 500))
+```
+
+
+An example for making handling missing data more "readable":
+```{r}
+n_missing <- function(x) {
+  sum(is.na(x))
+}
+```
+
+Another example with multiple vector inputs:
+```{r}
+mape <- function(actual, predicted) {
+  sum(abs((actual - predicted) / actual)) / length(actual)
+}
+```
+
+
+## Data frame functions
+
+Embracing (wrapping a variable in double braces) to tell dplyr to use the value stored inside the argument:
+```{r}
+grouped_mean <- function(df, group_var, mean_var) {
+  df |> 
+    group_by({{ group_var }}) |> 
+    summarize(mean({{ mean_var }}))
+}
+
+df <- tibble(
+  mean_var = 1,
+  group_var = "g",
+  group = 1,
+  x = 10,
+  y = 100
+)
+
+df |> grouped_mean(group, x)
+```
+
+Without embracing, the function above will throw an error. This problem happens because dplyr uses **tidy evaluation** to allow referring to the names of variables inside the data frame without any special treatment.
+
+
+### When to use embracing?
+
+- **Data-masking:** used in functions like `arrange()`, `filter()`, and `summarize()` that compute with variables.  
+- **Tidy-selection:** used for functions like `select()`, `relocate()`, and `rename()` that select variables.  
+
+
+### Common use cases of embracing
+
+```{r}
+summary6 <- function(data, var) {
+  data |> summarize(
+    min = min({{ var }}, na.rm = TRUE),
+    mean = mean({{ var }}, na.rm = TRUE),
+    median = median({{ var }}, na.rm = TRUE),
+    max = max({{ var }}, na.rm = TRUE),
+    n = n(),
+    n_miss = sum(is.na({{ var }})),
+    .groups = "drop"
+  )
+}
+
+diamonds |> summary6(carat)
+```
+
+**Tip:** Whenever you wrap `summarize()` in a helper, it is a good idea to set `.groups = "drop"` to both avoid seeing the warning and leaving the data in an ungrouped state.
+
+Example using the function above on grouped data:
+```{r}
+diamonds |> 
+  group_by(cut) |> 
+  summary6(carat)
+```
+
+Example using the function above on computed variables:
+```{r}
+diamonds |> 
+  group_by(cut) |> 
+  summary6(log10(carat))
+```
+
+
+Example using the helper function `count()` to compute proportions:
+```{r}
+count_prop <- function(df, var, sort = FALSE) {
+  df |> 
+    count({{ var }}, sort = sort) |> 
+    mutate(prop = n / sum(n))
+}
+
+diamonds |> count_prop(clarity)
+```
+
+
+Example with conditional variables as input argument:
+```{r}
+unique_where <- function(df, condition, var) {
+  df |> 
+    filter({{ condition }}) |> 
+    distinct({{ var }}) |> 
+    arrange({{ var}})
+}
+
+# Find all the destinations in December
+flights |> unique_where(month == 12, dest)
+```
+
+Example of a function that automatically selects a predefined set of columns (aka features):
+```{r}
+subset_flights <- function(rows, cols) {
+  flights |> 
+    filter({{ rows }}) |> 
+    select(time_hour, carrier, flight, {{ cols }})
+}
+```
+
+
+### Data-masking vs. tidy-selection
+
+Using the `pick()` function to make tidy-selection work inside a data-masking function: 
+```{r}
+count_missing <- function(df, group_vars, x_var) {
+  df |> 
+    group_by(pick({{ group_vars }})) |> 
+    summarize(
+      n_miss = sum(is.na({{ x_var}})),
+      .groups = "drop"
+    )
+}
+
+flights |> 
+  count_missing(c(year, month, day), dep_time)
+```
+
+Example using `pick()` to make 2d table of columns:
+```{r}
+count_wide <- function(data, rows, cols) {
+  data |> 
+    count(pick({{ rows }}, {{ cols }})) |> 
+    pivot_wider(
+      names_from = {{ cols }},
+      values_from = n,
+      names_sort = TRUE,
+      values_fill = 0
+    )
+}
+
+diamonds |> count_wide(c(clarity, color), cut)
+```
+
+
+### Exercises
+
+1. Using the datasets from `nycflights13, write a function that:
+
+> a. Finds all flights that were cancelled.  
+> b. Counts the number of cancelled flights and the number of flights delayed by more than an hour.  
+> c. Finds all flights that were cancelled or delayed by more than a user-supplied number of hours.  
+> d. Summarizes the weather to compute the minimum, mean, and maximum, of a user-supplied variable:  
+> e. Converts the user-supplied variable that uses clock time (e.g. `dep_time`, `arr_time`, etc.) into a decimal time (i.e. `hours` + (`minutes`/60)).  
+
+2. For each of the following functions, list all arguments that use tidy evaluation and describe whether they use data-masking or tidy-selection: `distinct()`, `count()`, `group_by()`, `rename_width()`, `slice_min()`, `slice_sample()`.  
+
+3. Generalize the following function so that you can supply any number of variables to count.  
+```r
+count_prop <- function(df, var, sort = FALSE) {
+  df |> 
+    count({{ var }}, sort = sort) |> 
+    mutate(prop = n / sum(n))
+}
+```
+
+## Plot functions 
+
+Instead of returning a value or a data frame, these functions return a plot. This works because `aes()` is a data-masking function. 
+
+Example: Imagine if you need to make a lot histograms like this:
+```{r}
+diamonds |> 
+  ggplot(aes(x = carat)) +
+  geom_histogram(binwidth = 0.1)
+
+diamonds |> 
+  ggplot(aes(x = carat)) +
+  geom_histogram(binwidth = 0.05)
+```
+
+Using a function to generate the plots above (embracing is used because `aes()` is a data-masking function!):
+```{r}
+histogram <- function(df, var, binwidth = NULL) {
+  df |> 
+    ggplot(aes(x = {{ var }})) + 
+    geom_histogram(binwidth = binwidth)
+}
+
+diamonds |> histogram(carat, 0.1)
+```
+
+The function above generates a `ggplot2` plot so additional components can be layered, just like in other plots:
+```{r}
+diamonds |> 
+  histogram(carat, 0.1) +
+  labs(
+    x = "Size (in carats)",
+    y = "Number of diamonds"
+  )
+```
+
+
+### More variables
+
+Example with overlaid plots:
+```{r}
+linearity_check <- function(df, x, y) {
+  df |> 
+    ggplot(aes(x = {{ x }}, y = {{ y }})) +
+    geom_point() +
+    geom_smooth(
+      method = "loess",
+      formula = y ~ x,
+      color = "red",
+      se = FALSE
+    ) +
+    geom_smooth(
+      method = "lm",
+      formula = y ~ x,
+      color = "blue", 
+      se = FALSE
+    )
+}
+
+starwars |> 
+  filter(mass < 1000) |> 
+  linearity_check(mass, height)
+```
+
+
+Example using a function to generate a plot for a large dataset where overplotting is a problem: 
+```{r}
+hex_plot <- function(df, x, y, z, bins = 20, fun = "mean") {
+  df |> 
+    ggplot(aes(x = {{ x }}, y = {{ y }}, z = {{ z }})) +
+    stat_summary_hex(
+      aes(color = after_scale(fill)), # make border color same as fill
+      bins = bins,
+      fun = fun
+    )
+}
+
+diamonds |>  hex_plot(carat, price, depth)
+```
+
+
+### Combining with other tidyverse
+
+A function to plot a sorted bar chart:
+```{r}
+sorted_bars <- function(df, var) {
+  df |> 
+    mutate({{ var }} := fct_rev(fct_infreq({{ var }}))) |> 
+    ggplot(aes(y = {{ var }})) +
+    geom_bar()
+}
+
+diamonds |> sorted_bars(clarity)
+```
+
+Note: the operator `:=`, commonly referred to as the "walrus operator" was used in the example to generate the variable name based on user-supplied data. This is necessary because the common behavior in R is to have only literal names on the left of the `=` operator. The walrus operator is a workaround solution to this problem.  
+
+Another example using functions to make it easier to draw a bar plot just for a subset of the data:
+```{r}
+conditional_bars <- function(df, condition, var) {
+  df |> 
+    filter({{ condition }}) |> 
+    ggplot(aes(x = {{ var }})) +
+    geom_bar()
+}
+
+diamonds |> conditional_bars(cut == "Good", clarity)
+```
+
+
+### Labeling
+
+Using `rlang::englue()` to customize plot labels -- this function works in a similar way to how Python's f-strings are used in plot labels.  
+```{r}
+histogram <- function(df, var, binwidth) {
+  label <- rlang::englue("A histogram of {{var}} with binwidth {{binwidth}}")
+  df |> 
+    ggplot(aes(x = {{ var }})) +
+    geom_histogram(binwidth = binwidth) +
+    labs(title = label)
+}
+
+diamonds |> histogram(carat, 0.1)
+```
+
+
+### Exercises
+
+Build up a rich plotting function by incrementally implementing each of the steps below:  
+
+1. Draw a scatterplot given dataset and `x` and `y` variables.  
+2. Add a line of best fit (i.e. a linear modwel with no standard errors).  
+3. Add a title.  
+
+
+## Style
+
+General guidelines:  
+- The name of the function should clearly describe what the function does.  
+- Function names are generally verbs (except when they compute some very well-known nouns like `mean()`, or property of an object, etc.).  
+- Argument names are generally nouns.  
+- Put one space before the brackets.  
+- Indent the body by two spaces.  
+- Put an extra space before and after the variable name inside the embracing brackets (`{{}}`). 
+
+
+
+
+
+
+

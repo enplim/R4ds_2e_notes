@@ -35,7 +35,7 @@ Import
 - [x] 24. Web Scraping
 
 Program
-- [ ] 25. Functions
+- [x] 25. Functions
 - [ ] 26. Iteration
 - [ ] 27. A Field Guide to Base R
 
