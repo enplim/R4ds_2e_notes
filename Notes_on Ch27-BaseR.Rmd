@@ -1,0 +1,384 @@
+---
+title: 'Notes on Ch 27: A Field Guide to Base R'
+author: "The Caveman Coder"
+date: "2025-08-18"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Topics covered:  
+
+- Subsetting with `[]`  
+- Subsetting with `[[]]`
+- Subsetting with `$`
+- `For` loops
+- Essential plotting functions
+
+
+### Prerequisites
+```{r}
+library(tidyverse)
+```
+
+
+## Selecting multiple elements with `[]`
+
+### Subsetting vectors
+```{r}
+# Accessing elements by position
+x <- c("one", "two", "three", "four", "five")
+
+x[c(3, 2, 5)]
+```
+
+
+Since you can repeatedly access a postion, the term "subsetting" is actually a misnomer:
+```{r}
+x[c(1, 1, 5, 5, 5, 2)]
+```
+
+Dropping the elements at specified positions using negative index positions:
+```{r}
+x[c(-1, -3, -5)]
+```
+
+Subsetting with a logical vector:
+```{r}
+x <- c(10, 3, NA, 5, 8, 1, NA)
+
+
+# All non-missing values of x
+x[!is.na(x)]
+
+# All even (or missing!) values of x
+x[x %% 2 == 0]
+```
+
+Unlike `filter()`, `NA` indices will be included in the output as `NA`s.
+
+Subsetting with a character vector:
+```{r}
+x <- c(abc = 1, def = 2, xyz = 5)
+x[c("xyz", "def")]
+```
+
+
+Subsetting with "nothing" returns the entire vector:
+```{r}
+x[]
+```
+
+
+This is a feature, not a bug. Useful when subsetting 2d structures like tibbles.
+
+
+### Subsetting data frames
+
+Format is `df[rows, columns]`. 
+
+Examples:
+```{r}
+df <- tibble(
+  x = 1:3,
+  y = c("a", "e", "f"),
+  z = runif(3)
+)
+
+# Selecting the first row and second column
+df[1, 2]
+
+# Selecting all rows and columns x and y
+df[, c("x", "y")]
+
+# Selecting rows where x is greater than 1 and all columns
+df[df$x > 1, ]
+```
+
+The dollar sign `$` is used to access the column name.
+
+In many applications, a tibble and data frame can be used interchangeably, but in base R, it is important to make a distinction between them: If the target object is a data frame, subsetting a single column with `[]` returns a vector, and subsetting multiple columns with `[]` returns a data frame. If the target object is a tibble, subsetting with `[]` will always return a tibble.
+```{r}
+# Dataframe
+df1 <- data.frame(x = 1:3)
+df1[, "x"]
+
+# Tibble
+df2 <- tibble(x = 1:3)
+df2[, "x"]
+```
+
+
+To avoid this ambiguity, we can use the argument `drop = FALSE` with dataframes:
+```{r}
+df1[, "x", drop = FALSE]
+```
+
+
+### `dplyr` equivalents
+
+The dplyr function `filter()` is equivalent to subsetting rows with a logical vector, with the missing values excluded:
+```{r}
+df <- tibble(
+  x = c(2, 3, 1, 1, NA),
+  y = letters[1:5],
+  z = runif(5)
+)
+
+df |> filter(x > 1)
+
+# same as
+df[!is.na(df$x) & df$x > 1, ]
+
+# same as
+df[which(df$x > 1), ]
+```
+
+
+The dplyr function `arrange()` is equivalent to subsetting the rows with an integer vector created with `order()`:
+```{r}
+df |> arrange(x, y)
+
+# same as
+df[order(df$x, df$y), ]
+```
+
+
+Both dplyr functions `select()` and `relocate()` are similar to subsetting the columns with a character vector:
+```{r}
+df |> select(x, z)
+
+# same as
+df[, c("x", "z")]
+```
+
+The base R function `subset()` combines the features of the dplyr functions `filter()` and `select()`:
+```{r}
+df |> 
+  filter(x > 1) |> 
+  select(y, z)
+
+# same as
+df |> subset(x > 1, c(y, z))
+```
+
+
+### Exercises
+
+1. Create functions that take a vector as input and return:
+
+a. The elements at even-numbered positions. 
+b. Every element except the last value.  
+c. Only even values (and no missing value).  
+
+2. Why is `x[-which(x > 0)]` not the same as `x[x <= 0]`? Read the documentation for `which()` and do some experiments to figure it out. 
+
+
+## Selecting a single element with `$` and `[[]]`
+
+These two are used to extract a single element. 
+
+### Data frames
+
+`$` is specialized to access by column name, whil `[[]]` is used to access by position or by name:
+```{r}
+tb <- tibble(
+  x = 1:4,
+  y = c(10, 4, 1, 21)
+)
+
+# by position
+tb[[1]]
+
+# by name
+tb[["x"]]
+tb$x
+```
+
+
+Both can also be used to create new columnms -- the base R equivalent to `mutate()`:
+```{r}
+tb$z <- tb$x + tb$y
+tb
+```
+
+
+The `$` accessor is very convenient to use when performing quick summaries:
+```{r}
+max(diamonds$carat)
+levels(diamonds$cut)
+```
+
+
+In dplyr, `pull()` takes a variable name or variable position and returns just that column, and can be equivalent to the use of accessors in the code above:
+```{r}
+diamonds |> pull(carat) |> max()
+
+diamonds |> pull(cut) |> levels()
+```
+
+### Tibbles
+
+The dollar `$` accessor performs partial matching when used on dataframes:
+```{r}
+df <- data.frame(x1 = 1)
+df$x
+df$z
+```
+
+When used in tibbles, the `$` acessor is more strict:
+```{r}
+tb <- tibble(x1 = 1)
+
+tb$x
+tb$z
+```
+
+
+Here is a"joke" to remember this distinction between tibbles and dataframes:
+
+> Tibbles are lazy and surly: they do less and complain more.  
+
+
+### Lists
+
+The `$` and `[[]]` "accessors extract a single component from a list:
+```{r}
+l <- list(
+  a = 1:3,
+  b = "a string",
+  c = pi,
+  d = list(-1, -5)
+)
+
+str(l[1:2])
+str(l[[1]])
+
+str(l[1])
+str(l[4])
+str(l[[4]])
+
+str(l$a)
+```
+
+Consider this analogy: A pepper shaker that contains sachets of ground pepper.  
+
+- `pepper[1]` refers to a pepper shaker containing a single sachet. 
+- `pepper[2]` refers to the same pepper shaker containing the second sachet. 
+- `pepper[1:2]`refers to the same pepper shaker containing the first and second sachet.  
+- `pepper[[1]]` extracts the first pepper sachet itself.  
+
+
+## Exercises
+
+1. What happens when you use `[[]]` with a positive integer that's bigger than the length of the vector? What happens when you subset with a name that doesn't exist?  
+
+2. What would `pepper[[1]][1]` be? What about `pepper[[1]][[1]]?
+
+
+## Apply family 
+
+- The most important function in this family is the `lapply()` function, which can be used to replace every `map()` function, if desired.  
+- There is no base R equivalent to `across()`, but using `[]` with `lapply()` can achieve something close to it.  
+
+
+Example:
+```{r}
+df <- tibble(
+  a = 1,
+  b = 2,
+  c = "a",
+  d = "b",
+  e = 4
+)
+
+# First find numeric columns
+num_cols <- sapply(df, is.numeric)
+num_cols
+
+# Then transform each column with lapply() and replace the 
+# original values.
+df[, num_cols]
+df
+```
+
+`sapply()` is similar to `lapply()`, but the former always tries to simplify the result, hence the `s` in the name.   
+
+- The authors don't recommend using this for programming, because the simplification can fail and can give unexpected results. 
+
+- Base R provides a stricter version of `sapply()`, called `vapply()` -- short for vector apply.  
+
+Example using `vapply()` instead of `sapply()`:
+```{r}
+vapply(df, is.numeric, logical(1))
+```
+
+Example using `tapply()`, which computes a single grouped summary:
+```{r}
+diamonds |> 
+  group_by(cut) |> 
+  summarize(price = mean(price))
+
+tapply(diamonds$price, diamonds$cut, mean)
+```
+
+
+## `for` loops
+
+Basic structure:
+```r
+for (element in vector) {
+  # do something with element
+}
+```
+
+The most straighforward use of `for` loops is to achieve the same effect as `walk()` -- call some function with a side-effect on each element of a list. 
+
+Example: 
+```r
+# version using walk
+paths |> walk(append_file)
+
+# version using for-loop
+for (paths in paths) {
+  append_file(paths)
+}
+```
+
+To iterate over the list of file paths, it is better to iterate over their indices, rather than over the elements. To effectively do this, the function `seq_along()` can be used. The final function becomes:
+```r
+for (i in seq_along(paths)) {
+ files[[i]] <- readxl::read_excel(paths[[i]])
+}
+```
+
+Finally, to combine the list of tibbles into a single tibble, the combination of `do.call()` and `rbind()` can be used:
+```r
+do.call() + rbind()
+```
+
+To save the results, rather than make a list and save the results as we go, it is better to build the dataframe piece by peice:
+```r
+out <- NULL
+for (path in paths) {
+  out <- rbind(out, readxl::read_excel(path))
+}
+```
+
+## Plots
+
+There are two main types of base plot (for data science?) are scatterplots and histograms. In base R, we can make these plots using `plot()` and `hist()`.
+
+Example:
+```{r}
+hist(diamonds$carat)
+plot(diamonds$carat, diamonds$price)
+```
+
+
+
+
+
+
+
+

@@ -37,7 +37,7 @@ Import
 Program
 - [x] 25. Functions
 - [x] 26. Iteration
-- [ ] 27. A Field Guide to Base R
+- [x] 27. A Field Guide to Base R
 
 Communicate
 - [ ] 28. Quarto
