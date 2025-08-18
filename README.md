@@ -36,7 +36,7 @@ Import
 
 Program
 - [x] 25. Functions
-- [ ] 26. Iteration
+- [x] 26. Iteration
 - [ ] 27. A Field Guide to Base R
 
 Communicate
