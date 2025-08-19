@@ -40,4 +40,5 @@ Program
 - [x] 27. A Field Guide to Base R
 
 Communicate
-- [ ] 28. Quarto
+- [x] 28. Quarto
+- [x] 29. Quarto Formats
